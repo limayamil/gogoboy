@@ -43,10 +43,13 @@ que la funcion de Vercel ejecuta en produccion, asi que no hace falta la CLI de 
 
 ## Deploy (Vercel)
 
-El sitio es un build estatico de Vite mas **una sola** Serverless Function catch-all que
-atiende toda la familia `/api/*`. Esa funcion (`api/[...path].ts`) no reimplementa nada:
-enruta con una tabla y adapta el `Request`/`Response` del estandar web a la firma
-`(req, res)` que usan los handlers de `server/`, los mismos que corren en `npm run dev`.
+El sitio es un build estatico de Vite mas dos Serverless Functions que exportan el
+**mismo** handler (`server/lib/api-handler.ts`). Vercel fuera de Next no soporta
+catch-all `[...path]`: un solo `api/[...path].ts` atiende `/api/categories` pero
+responde `NOT_FOUND` en `/api/categories/:id`. Por eso:
+
+- `api/[resource].ts` cubre un segmento (`/api/state`, `/api/tasks`, …)
+- `api/[resource]/[id].ts` cubre dos (`/api/categories/:id`, `/api/uploads/sign`, …)
 
 Para que el deploy funcione hay que cargar las variables de entorno en
 **Project Settings -> Environment Variables**: `DATABASE_URL` y, si queres adjuntos,
@@ -55,8 +58,8 @@ las `S3_*`. Sin `DATABASE_URL` la funcion responde 500 y la app muestra el error
 El `vercel.json` define el build (`npm run build` -> `dist`) y el fallback del SPA, para
 que refrescar en `/semana` o `/categorias` no devuelva 404.
 
-> Si agregas un endpoint en `server/`, sumalo a las dos tablas de rutas:
-> `api/[...path].ts` (produccion) y `scripts/dev-server.ts` (desarrollo).
+> Si agregas un endpoint en `server/`, sumalo a `server/lib/api-handler.ts`.
+> El servidor de desarrollo reenvia todo `/api/*` a ese mismo handler.
 
 ## Adjuntos
 
@@ -75,7 +78,7 @@ cambiar esos valores.
 server/           Handlers HTTP (los mismos en dev y en produccion)
   _lib/           Conexion a Neon, helpers HTTP, validacion, storage
   lib/            Adaptador Request/Response -> (req, res)
-api/              Funcion catch-all de Vercel que atiende /api/*
+api/              Entradas de Vercel (un segmento y dos) hacia handleApi
 db/migrations/    SQL versionado
 scripts/          Servidor de desarrollo y runner de migraciones
 src/

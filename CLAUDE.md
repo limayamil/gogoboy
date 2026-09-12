@@ -22,7 +22,7 @@ Un solo test: `npx vitest run src/lib/dates.test.ts` (o `npx vitest run -t "nomb
 
 No hay linter configurado; `tsc -b` con `strict`, `noUnusedLocals` y `noUnusedParameters` es la única puerta.
 
-Necesita `.env` con `DATABASE_URL` (copiar de `.env.example`). `server/_lib/db.ts` tira al importarse si falta.
+Necesita `.env` con `DATABASE_URL` (copiar de `.env.example`). `server/_lib/db.ts` arma el cliente en el primer query; si falta, el handler responde 500 JSON (no tira al importar).
 
 ## Arquitectura
 
@@ -30,10 +30,13 @@ Necesita `.env` con `DATABASE_URL` (copiar de `.env.example`). `server/_lib/db.t
 
 `server/` contiene handlers con firma `(req, res)` estilo Express. Corren en dos lugares sin modificarse:
 
-- **Dev**: `scripts/dev-server.ts` los monta en Express; Vite proxea `/api` a `:3001`.
-- **Prod**: `api/[...path].ts` es **una sola** función catch-all de Vercel que atiende `/api/*`, y `server/lib/router.ts` adapta el `Request`/`Response` del estándar web a `(req, res)`.
+- **Dev**: `scripts/dev-server.ts` reenvía todo `/api/*` a `handleApi`; Vite proxea `/api` a `:3001`.
+- **Prod**: Vercel (fuera de Next) **no** implementa catch-all `[...path]`. Un único `api/[...path].ts` solo matchea un segmento (`/api/categories` sí, `/api/categories/:id` no) y Vercel responde `NOT_FOUND` antes de ejecutar código. Hay DOS entradas que exportan el mismo handler:
+  - `api/[resource].ts` → `/api/state`, `/api/categories`, `/api/tasks`, …
+  - `api/[resource]/[id].ts` → `/api/categories/:id`, `/api/uploads/sign`, …
+  El ruteo interno vive en `server/lib/api-handler.ts`; `server/lib/router.ts` adapta el `Request`/`Response` del estándar web a `(req, res)`.
 
-> **Al agregar un endpoint hay que sumarlo a las DOS tablas de rutas**: `api/[...path].ts` y `scripts/dev-server.ts`. Los imports en `api/[...path].ts` deben ser estáticos — el bundler de Vercel no sigue `import()` con variable y el handler quedaría fuera del paquete, fallando recién en producción.
+> **Al agregar un endpoint hay que sumarlo a `server/lib/api-handler.ts`.** Los imports ahí deben ser estáticos — el bundler de Vercel no sigue `import()` con variable y el handler quedaría fuera del paquete, fallando recién en producción.
 
 Cada handler se arma con `route({ GET, POST, PATCH, DELETE })` de `server/_lib/http.ts`, que centraliza el 405, el OPTIONS y la conversión de `HttpError` a respuesta. Para cortar con un error: `badRequest(msg)` / `notFound(msg)` / `throw new HttpError(status, msg)`.
 

@@ -1,58 +1,59 @@
 /**
- * Servidor de desarrollo. Monta los mismos handlers de server/ que la funcion de Vercel
- * sirve en produccion, asi no hace falta la CLI de Vercel para trabajar en local.
- * Vite proxea /api aca (ver vite.config.ts).
+ * Servidor de desarrollo. Reenvia todo `/api/*` al mismo handler que las entradas
+ * de Vercel (`server/lib/api-handler.ts`), asi agregar un endpoint es tocarlo ahi
+ * y no en dos tablas de rutas.
  */
 import 'dotenv/config'
 import express from 'express'
-import type { ErrorRequestHandler } from 'express'
-import type { Handler } from '../server/_lib/http.ts'
+import type { ErrorRequestHandler, Request as ExpressRequest } from 'express'
+import { handleApi } from '../server/lib/api-handler.ts'
 
 const PORT = Number(process.env.API_PORT ?? 3001)
 
 const app = express()
 app.use(express.json({ limit: '1mb' }))
 
-/**
- * Cada entrada refleja un archivo de server/; el `:id` de Express se copia a req.query.id.
- * Si agregas una ruta aca, agregala tambien en api/[...path].ts.
- */
-const routes: Array<[path: string, module: string]> = [
-  ['/api/state', '../server/state.ts'],
-  ['/api/categories', '../server/categories/index.ts'],
-  ['/api/categories/:id', '../server/categories/[id].ts'],
-  ['/api/tasks', '../server/tasks/index.ts'],
-  ['/api/tasks/:id', '../server/tasks/[id].ts'],
-  ['/api/subtasks', '../server/subtasks/index.ts'],
-  ['/api/subtasks/:id', '../server/subtasks/[id].ts'],
-  ['/api/quick-tasks', '../server/quick-tasks/index.ts'],
-  ['/api/quick-tasks/:id', '../server/quick-tasks/[id].ts'],
-  ['/api/attachments', '../server/attachments/index.ts'],
-  ['/api/attachments/:id', '../server/attachments/[id].ts'],
-  ['/api/links', '../server/links/index.ts'],
-  ['/api/links/:id', '../server/links/[id].ts'],
-  ['/api/uploads/sign', '../server/uploads/sign.ts'],
-]
-
-for (const [path, modulePath] of routes) {
-  app.all(path, async (req, res, next) => {
-    try {
-      const mod = (await import(modulePath)) as { default: Handler }
-      await mod.default(
-        {
-          method: req.method,
-          url: req.originalUrl,
-          query: { ...req.query, ...req.params } as Record<string, string>,
-          body: req.body,
-          headers: req.headers as Record<string, string>,
-        },
-        res as never,
-      )
-    } catch (error) {
-      next(error)
+function toWebRequest(req: ExpressRequest): Request {
+  const url = new URL(req.originalUrl, `http://127.0.0.1:${PORT}`)
+  const headers = new Headers()
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (value == null) continue
+    if (Array.isArray(value)) {
+      for (const item of value) headers.append(key, item)
+    } else {
+      headers.set(key, value)
     }
+  }
+  // El body lo rearmamos nosotros; el content-length original no coincide.
+  headers.delete('content-length')
+
+  const method = req.method
+  const hasBody = method !== 'GET' && method !== 'HEAD'
+  return new Request(url, {
+    method,
+    headers,
+    body: hasBody ? JSON.stringify(req.body ?? {}) : undefined,
   })
 }
+
+app.use(async (req, res, next) => {
+  if (!req.path.startsWith('/api')) {
+    next()
+    return
+  }
+
+  try {
+    const response = await handleApi(toWebRequest(req))
+    res.status(response.status)
+    response.headers.forEach((value, name) => {
+      res.setHeader(name, value)
+    })
+    const buf = Buffer.from(await response.arrayBuffer())
+    res.end(buf.length ? buf : undefined)
+  } catch (error) {
+    next(error)
+  }
+})
 
 app.use((req, res) => {
   res.status(404).json({ error: `Sin ruta para ${req.method} ${req.path}` })

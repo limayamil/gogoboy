@@ -1,0 +1,69 @@
+.toggle {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: var(--r-pill);
+  border: 2px solid var(--line-strong);
+  background: var(--surface);
+  color: #fff;
+  transition: border-color var(--dur) ease, background var(--dur) ease, transform var(--dur-fast) var(--ease-out);
+  overflow: hidden;
+}
+
+.toggle:hover {
+  transform: scale(1.08);
+  border-color: var(--accent);
+}
+
+.toggle:active {
+  transform: scale(0.94);
+}
+
+.md svg,
+.sm svg {
+  animation: check-pop var(--dur) var(--ease-out) both;
+}
+
+.md {
+  width: 24px;
+  height: 24px;
+}
+
+.sm {
+  width: 19px;
+  height: 19px;
+  border-width: 2px;
+}
+
+.md svg {
+  width: 15px;
+  height: 15px;
+}
+
+.sm svg {
+  width: 12px;
+  height: 12px;
+}
+
+.pendiente {
+  border-color: var(--line-strong);
+}
+
+/* Medio circulo relleno: lee "a medio hacer" de un vistazo. */
+.en_progreso {
+  border-color: var(--urgency-media);
+}
+
+.half {
+  position: absolute;
+  inset: 0;
+  background: var(--urgency-media);
+  clip-path: inset(0 50% 0 0);
+  animation: fade-in var(--dur) ease both;
+}
+
+.hecha {
+  border-color: var(--urgency-baja);
+  background: var(--urgency-baja);
+}

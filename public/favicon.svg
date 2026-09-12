@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="petals" x1="5" y1="4" x2="27" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff977f" />
+      <stop offset="0.48" stop-color="#f062a1" />
+      <stop offset="1" stop-color="#9b6cf4" />
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="9" fill="#fbf6f3" />
+  <g fill="url(#petals)">
+    <ellipse cx="16" cy="8.5" rx="5.2" ry="6.7" />
+    <ellipse cx="23.3" cy="13.6" rx="6.7" ry="5.2" transform="rotate(-20 23.3 13.6)" />
+    <ellipse cx="20.5" cy="22.2" rx="5.2" ry="6.7" transform="rotate(-38 20.5 22.2)" />
+    <ellipse cx="11.5" cy="22.2" rx="5.2" ry="6.7" transform="rotate(38 11.5 22.2)" />
+    <ellipse cx="8.7" cy="13.6" rx="6.7" ry="5.2" transform="rotate(20 8.7 13.6)" />
+  </g>
+  <path d="m10.4 16.3 3.8 3.7 7.7-8" fill="none" stroke="#fff" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

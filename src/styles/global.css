@@ -1,0 +1,199 @@
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background:
+    radial-gradient(1100px 600px at 8% -8%, var(--bg-tint-a), transparent 62%),
+    radial-gradient(1000px 620px at 96% 4%, var(--bg-tint-b), transparent 58%),
+    var(--bg);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.45;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+ul,
+ol {
+  list-style: none;
+  padding: 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+/* Barras de scroll discretas, para que las columnas no rompan la estetica. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes logo-sway {
+  0%,
+  100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+}
+
+@keyframes icon-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes check-pop {
+  from {
+    transform: scale(0.55);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.12);
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes badge-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+.pageEnter {
+  animation: fade-rise var(--dur-slow) var(--ease-out) both;
+}
+
+.stagger > * {
+  animation: fade-rise var(--dur-slow) var(--ease-out) both;
+}
+
+.staggerFade > * {
+  animation: fade-in var(--dur-slow) var(--ease-out) both;
+}
+
+.stagger > *:nth-child(1),
+.staggerFade > *:nth-child(1) {
+  animation-delay: 40ms;
+}
+.stagger > *:nth-child(2),
+.staggerFade > *:nth-child(2) {
+  animation-delay: 80ms;
+}
+.stagger > *:nth-child(3),
+.staggerFade > *:nth-child(3) {
+  animation-delay: 120ms;
+}
+.stagger > *:nth-child(4),
+.staggerFade > *:nth-child(4) {
+  animation-delay: 160ms;
+}
+.stagger > *:nth-child(5),
+.staggerFade > *:nth-child(5) {
+  animation-delay: 200ms;
+}
+.stagger > *:nth-child(6),
+.staggerFade > *:nth-child(6) {
+  animation-delay: 240ms;
+}
+.stagger > *:nth-child(7),
+.staggerFade > *:nth-child(7) {
+  animation-delay: 280ms;
+}
+.stagger > *:nth-child(8),
+.staggerFade > *:nth-child(8) {
+  animation-delay: 320ms;
+}
+.stagger > *:nth-child(n + 9),
+.staggerFade > *:nth-child(n + 9) {
+  animation-delay: 340ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

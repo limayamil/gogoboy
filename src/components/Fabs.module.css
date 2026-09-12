@@ -1,0 +1,234 @@
+.dock {
+  position: fixed;
+  right: max(var(--space-5), env(safe-area-inset-right));
+  bottom: max(var(--space-5), env(safe-area-inset-bottom));
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.fab {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-lg);
+  transition: transform var(--dur) var(--ease-out), filter var(--dur) ease;
+}
+
+.fab:hover {
+  transform: translateY(-2px) scale(1.04);
+}
+
+.fab:active,
+.fab:hover:active {
+  transform: translateY(0) scale(0.96);
+}
+
+.fabQuick {
+  width: 48px;
+  height: 48px;
+  background: var(--surface);
+  color: var(--accent-2);
+}
+
+.fabQuickOpen {
+  background: var(--accent-2);
+  color: #fff;
+}
+
+.fabAdd {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+}
+
+.badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  border: 2px solid var(--bg);
+  animation: badge-pulse 1.8s ease-in-out infinite;
+}
+
+/* El desplegable aparece por encima del FAB, como en el boceto. */
+.popover {
+  width: min(320px, calc(100vw - 2 * var(--space-5)));
+  max-height: 55vh;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4);
+  gap: var(--space-3);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  animation: pop var(--dur) var(--ease-out);
+  transform-origin: bottom right;
+}
+
+.popHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.popTitle {
+  font-size: 15px;
+}
+
+.popCount {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-faint);
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0 calc(-1 * var(--space-2));
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 7px var(--space-2);
+  border-radius: var(--r-sm);
+  font-size: 14px;
+}
+
+.item:hover {
+  background: var(--surface-2);
+}
+
+.itemLabel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  cursor: pointer;
+}
+
+.item span {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.itemDone {
+  color: var(--ink-faint);
+  text-decoration: line-through;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-2);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.itemDelete {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-pill);
+  color: transparent;
+  flex-shrink: 0;
+}
+
+.item:hover .itemDelete {
+  color: var(--ink-faint);
+}
+
+.itemDelete:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.itemDelete:focus-visible {
+  color: var(--ink);
+}
+
+@media (hover: none) {
+  .itemDelete {
+    color: var(--ink-faint);
+  }
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+  font-size: 13.5px;
+  color: var(--ink-faint);
+  text-align: center;
+}
+
+.empty svg {
+  color: var(--accent-2);
+  animation: icon-float 2.4s ease-in-out infinite;
+}
+
+.addRow {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.addInput {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--line);
+  background: var(--surface-2);
+  font-size: 14px;
+}
+
+.addInput:focus {
+  outline: none;
+  border-color: var(--accent-2);
+  background: var(--surface);
+}
+
+.addButton {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  border-radius: var(--r-sm);
+  background: var(--accent-2-soft);
+  color: var(--accent-2);
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+}

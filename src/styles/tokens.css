@@ -1,0 +1,83 @@
+/* Tokens de GoGoBoy. Todo el color de la app sale de aca; el dark mode es el
+   unico bloque que los redefine. */
+
+:root {
+  --font-sans: 'Nunito', ui-rounded, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Superficies */
+  --bg: #fbf6f3;
+  --bg-tint-a: #fde8e4;
+  --bg-tint-b: #e9e6fa;
+  --surface: #ffffff;
+  --surface-2: #f7f4f8;
+  --surface-sunken: #f2eef4;
+
+  /* Texto */
+  --ink: #3a3340;
+  --ink-soft: #6d6577;
+  --ink-faint: #9d96a6;
+
+  /* Acentos */
+  --accent: #f4836c;
+  --accent-soft: #ffe3dc;
+  --accent-ink: #8c3a2a;
+  --accent-2: #a78be6;
+  --accent-2-soft: #ebe2fb;
+
+  /* Semaforo de urgencia */
+  --urgency-baja: #8db473;
+  --urgency-media: #e4b84c;
+  --urgency-alta: #f4836c;
+
+  --line: #eae4ee;
+  --line-strong: #d9d1df;
+
+  /* Forma */
+  --r-xs: 10px;
+  --r-sm: 14px;
+  --r-md: 20px;
+  --r-lg: 28px;
+  --r-pill: 999px;
+
+  --shadow-sm: 0 2px 8px rgb(58 51 64 / 6%);
+  --shadow-md: 0 8px 24px rgb(58 51 64 / 8%);
+  --shadow-lg: 0 16px 40px rgb(58 51 64 / 12%);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --header-h: 76px;
+
+  --ease-out: cubic-bezier(0.2, 0.9, 0.3, 1);
+  --dur-fast: 140ms;
+  --dur: 220ms;
+  --dur-slow: 380ms;
+}
+
+:root[data-theme='dark'] {
+  --bg: #17141c;
+  --bg-tint-a: #241c27;
+  --bg-tint-b: #1b1a2c;
+  --surface: #221e29;
+  --surface-2: #2a2532;
+  --surface-sunken: #1d1a23;
+
+  --ink: #f0ebf4;
+  --ink-soft: #b6aec0;
+  --ink-faint: #857d90;
+
+  --accent-soft: #4a2a24;
+  --accent-ink: #ffc9bd;
+  --accent-2-soft: #322a48;
+
+  --line: #332d3b;
+  --line-strong: #4a4354;
+
+  --shadow-sm: 0 2px 8px rgb(0 0 0 / 30%);
+  --shadow-md: 0 8px 24px rgb(0 0 0 / 35%);
+  --shadow-lg: 0 16px 40px rgb(0 0 0 / 45%);
+}

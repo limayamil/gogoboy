@@ -99,4 +99,32 @@ describe('createApiHandler', () => {
     expect(response.status).toBe(405)
     expect(response.headers.get('allow')).toBe('GET, POST, DELETE')
   })
+
+  it('acepta URL relativa como la que manda el runtime Node de Vercel', async () => {
+    const response = await handler({
+      url: '/api/state',
+      method: 'GET',
+      headers: new Headers({ host: 'gogoboy.vercel.app' }),
+      text: async () => '',
+    } as unknown as Request)
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({ method: 'GET' })
+  })
+
+  it('responde 500 en JSON si el handler tira, para no devolver FUNCTION_INVOCATION_FAILED', async () => {
+    const boom = createApiHandler([
+      [
+        '/api/boom',
+        () => {
+          throw new Error('fallo de prueba')
+        },
+      ],
+    ])
+
+    const response = await boom(new Request('https://gogoboy.vercel.app/api/boom'))
+
+    expect(response.status).toBe(500)
+    expect(await response.json()).toEqual({ error: 'fallo de prueba' })
+  })
 })

@@ -74,6 +74,19 @@ function match(pattern: string, pathname: string): Record<string, string> | null
   return params
 }
 
+function requestUrl(request: Request): URL {
+  const raw = request.url || '/'
+  try {
+    return new URL(raw)
+  } catch {
+    // El runtime Node clasico de Vercel a veces pasa el path (`/api/state`) en vez
+    // de una URL absoluta; sin base, `new URL` tira y la funcion muere con 500.
+    const host =
+      typeof request.headers?.get === 'function' ? (request.headers.get('host') ?? 'localhost') : 'localhost'
+    return new URL(raw, `http://${host}`)
+  }
+}
+
 async function toApiRequest(
   request: Request,
   params: Record<string, string>,
@@ -96,20 +109,26 @@ async function toApiRequest(
 /** Arma el handler serverless que resuelve toda la familia /api/*. */
 export function createApiHandler(routes: Route[]) {
   return async (request: Request): Promise<Response> => {
-    const url = new URL(request.url)
+    try {
+      const url = requestUrl(request)
 
-    for (const [pattern, handler] of routes) {
-      const params = match(pattern, url.pathname)
-      if (!params) continue
+      for (const [pattern, handler] of routes) {
+        const params = match(pattern, url.pathname)
+        if (!params) continue
 
-      const res = new ResponseCollector()
-      await handler(await toApiRequest(request, params, url), res)
-      return res.toResponse()
+        const res = new ResponseCollector()
+        await handler(await toApiRequest(request, params, url), res)
+        return res.toResponse()
+      }
+
+      return Response.json(
+        { error: `Sin ruta para ${request.method} ${url.pathname}` },
+        { status: 404 },
+      )
+    } catch (error) {
+      console.error('[api] error no manejado:', error)
+      const message = error instanceof Error ? error.message : 'Error desconocido'
+      return Response.json({ error: message }, { status: 500 })
     }
-
-    return Response.json(
-      { error: `Sin ruta para ${request.method} ${url.pathname}` },
-      { status: 404 },
-    )
   }
 }

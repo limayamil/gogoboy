@@ -1,15 +1,26 @@
 import { neon } from '@neondatabase/serverless'
 import type { Attachment, Category, QuickTask, Subtask, Task, TaskLink } from '../../src/shared/types.ts'
 
-const connectionString = process.env.DATABASE_URL
+type Sql = ReturnType<typeof neon>
 
-if (!connectionString) {
-  throw new Error(
-    'Falta DATABASE_URL. Copia .env.example a .env y pega la connection string de Neon.',
-  )
+function databaseUrl(): string {
+  const connectionString = process.env.DATABASE_URL
+  if (!connectionString) {
+    throw new Error(
+      'Falta DATABASE_URL. Copia .env.example a .env y pega la connection string de Neon.',
+    )
+  }
+  return connectionString
 }
 
-export const sql = neon(connectionString)
+let sqlClient: Sql | undefined
+
+// Recien en el primer query: si tiramos al importar, Vercel responde
+// FUNCTION_INVOCATION_FAILED (texto plano) y la UI no puede mostrar el mensaje.
+export const sql: Sql = ((strings: TemplateStringsArray, ...values: unknown[]) => {
+  sqlClient ??= neon(databaseUrl())
+  return sqlClient(strings, ...values)
+}) as Sql
 
 // La base usa snake_case y el front camelCase; estos mappers son la unica frontera
 // donde se traduce, para que ningun componente vea nombres de columnas.

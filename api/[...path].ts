@@ -41,4 +41,9 @@ const routes: Route[] = [
   ['/api/uploads/sign', uploadsSign],
 ]
 
-export default createApiHandler(routes)
+const handler = createApiHandler(routes)
+
+// Vercel (fuera de Next) espera el Web Standard `{ fetch }`. Un `export default`
+// de una funcion lo toma como handler Node `(req, res)` y `new URL(req.url)` tira
+// porque `req.url` es el path, no una URL absoluta: FUNCTION_INVOCATION_FAILED.
+export default { fetch: handler }

@@ -1,0 +1,73 @@
+import { createRemoteJWKSet, jwtVerify } from 'jose'
+
+export interface TokenPayload {
+  email?: unknown
+}
+
+export type VerifyToken = (token: string) => Promise<TokenPayload | null>
+
+/**
+ * El candado de la API: JWT de Neon Auth + un solo email. Las tablas no tienen
+ * user_id, asi que sin allowlist cualquier cuenta valida veria todos los datos.
+ */
+export function createAuthenticator(options: {
+  allowedEmail: string
+  verifyToken: VerifyToken
+}): (request: Request) => Promise<Response | null> {
+  const allowed = options.allowedEmail.trim().toLowerCase()
+
+  return async (request) => {
+    if (request.method.toUpperCase() === 'OPTIONS') return null
+
+    const token = bearerToken(request)
+    if (!token) return deny(401, 'No autenticado')
+
+    const payload = await options.verifyToken(token)
+    const email = typeof payload?.email === 'string' ? payload.email.trim().toLowerCase() : ''
+    if (!email) return deny(401, 'No autenticado')
+
+    if (!allowed || email !== allowed) return deny(403, 'No autorizado')
+
+    return null
+  }
+}
+
+function bearerToken(request: Request): string | null {
+  const header = request.headers.get('authorization')
+  if (!header) return null
+  const match = /^Bearer\s+(.+)$/i.exec(header.trim())
+  const token = match?.[1]?.trim()
+  return token || null
+}
+
+function deny(status: 401 | 403, error: string): Response {
+  return Response.json({ error }, { status })
+}
+
+function authBaseUrl(): string | null {
+  const raw = process.env.NEON_AUTH_URL ?? process.env.VITE_NEON_AUTH_URL
+  const url = raw?.trim()
+  return url ? url.replace(/\/$/, '') : null
+}
+
+let jwks: ReturnType<typeof createRemoteJWKSet> | undefined
+
+async function verifyNeonJwt(token: string): Promise<TokenPayload | null> {
+  const base = authBaseUrl()
+  if (!base) return null
+
+  try {
+    jwks ??= createRemoteJWKSet(new URL(`${base}/.well-known/jwks.json`))
+    const { payload } = await jwtVerify(token, jwks, {
+      issuer: new URL(base).origin,
+    })
+    return { email: payload.email }
+  } catch {
+    return null
+  }
+}
+
+export const authenticateRequest = createAuthenticator({
+  allowedEmail: process.env.AUTH_ALLOWED_EMAIL ?? '',
+  verifyToken: verifyNeonJwt,
+})

@@ -12,6 +12,7 @@
  * paquete y la funcion fallaria recien en produccion.
  */
 import { createApiHandler, type Route } from './router.ts'
+import { authenticateRequest } from '../_lib/auth.ts'
 
 import state from '../state.ts'
 import categories from '../categories/index.ts'
@@ -49,4 +50,4 @@ const routes: Route[] = [
   ['/api/uploads/sign', uploadsSign],
 ]
 
-export const handleApi = createApiHandler(routes)
+export const handleApi = createApiHandler(routes, authenticateRequest)

@@ -106,8 +106,11 @@ async function toApiRequest(
   }
 }
 
+/** Si devuelve un Response, se corta ahi (401/403) y el handler no corre. */
+export type Authenticate = (request: Request) => Promise<Response | null>
+
 /** Arma el handler serverless que resuelve toda la familia /api/*. */
-export function createApiHandler(routes: Route[]) {
+export function createApiHandler(routes: Route[], authenticate?: Authenticate) {
   return async (request: Request): Promise<Response> => {
     try {
       const url = requestUrl(request)
@@ -115,6 +118,11 @@ export function createApiHandler(routes: Route[]) {
       for (const [pattern, handler] of routes) {
         const params = match(pattern, url.pathname)
         if (!params) continue
+
+        if (authenticate) {
+          const denied = await authenticate(request)
+          if (denied) return denied
+        }
 
         const res = new ResponseCollector()
         await handler(await toApiRequest(request, params, url), res)

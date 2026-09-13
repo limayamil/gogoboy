@@ -3,11 +3,13 @@ import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from './app/AppShell'
+import { RequireAuth } from './app/RequireAuth'
 import { ThemeProvider } from './app/theme'
 import { TodayView } from './views/TodayView'
 import { CategoriesView } from './views/CategoriesView'
 import { WeekView } from './views/WeekView'
 import { NotesView } from './views/NotesView'
+import { LoginView } from './views/LoginView'
 import './styles/global.css'
 
 const queryClient = new QueryClient({
@@ -32,12 +34,15 @@ createRoot(document.getElementById('root')!).render(
       <ThemeProvider>
         <BrowserRouter>
           <Routes>
-            <Route element={<AppShell />}>
-              <Route path="/" element={<TodayView />} />
-              <Route path="/categorias" element={<CategoriesView />} />
-              <Route path="/semana" element={<WeekView />} />
-              <Route path="/notas" element={<NotesView />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="/login" element={<LoginView />} />
+            <Route element={<RequireAuth />}>
+              <Route element={<AppShell />}>
+                <Route path="/" element={<TodayView />} />
+                <Route path="/categorias" element={<CategoriesView />} />
+                <Route path="/semana" element={<WeekView />} />
+                <Route path="/notas" element={<NotesView />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Route>
             </Route>
           </Routes>
         </BrowserRouter>

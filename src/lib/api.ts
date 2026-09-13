@@ -10,11 +10,21 @@ import type {
   TaskInput,
   TaskLink,
 } from '../shared/types'
+import { getAccessToken } from './auth'
+
+export function mergeAuthHeaders(init: RequestInit | undefined, token: string | null): Headers {
+  const headers = new Headers(init?.headers)
+  if (init?.body && !headers.has('content-type')) {
+    headers.set('content-type', 'application/json')
+  }
+  if (token) headers.set('authorization', `Bearer ${token}`)
+  return headers
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, {
     ...init,
-    headers: init?.body ? { 'content-type': 'application/json' } : undefined,
+    headers: mergeAuthHeaders(init, await getAccessToken()),
   })
 
   if (!response.ok) {

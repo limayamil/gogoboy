@@ -20,4 +20,10 @@ describe('handleApi', () => {
     expect(response.status).toBe(404)
     expect(await response.json()).toEqual({ error: 'Sin ruta para GET /api/nope' })
   })
+
+  it('responde 401 en una ruta real si no hay token', async () => {
+    const response = await call('/api/state', 'GET')
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({ error: 'No autenticado' })
+  })
 })

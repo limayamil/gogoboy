@@ -192,6 +192,13 @@ export const IconLock = ({ size = 18, className }: Props) => (
   </svg>
 )
 
+export const IconLogout = ({ size = 18, className }: Props) => (
+  <svg {...base(size)} className={className} aria-hidden="true">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    <path d="M16 17l5-5-5-5M21 12H9" />
+  </svg>
+)
+
 export const IconCopy = ({ size = 18, className }: Props) => (
   <svg {...base(size)} className={className} aria-hidden="true">
     <rect x="9" y="9" width="11" height="11" rx="2" />

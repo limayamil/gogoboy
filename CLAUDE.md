@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Proyecto
 
-GoGoBoy: app personal de productividad (un solo usuario, sin auth ni `user_id`). React + Vite + TypeScript, Neon Postgres, handlers HTTP en `server/`, deploy en Vercel.
+GoGoBoy: app personal de productividad (un solo usuario, sin `user_id` en las tablas). React + Vite + TypeScript, Neon Postgres, handlers HTTP en `server/`, deploy en Vercel. El acceso se cierra con Neon Auth: JWT en `/api` + allowlist `AUTH_ALLOWED_EMAIL`.
 
 **El código, los comentarios y la UI están en español.** Los comentarios explican el *por qué* de una decisión, no el *qué* hace la línea. Mantené ese registro al escribir código nuevo.
 
@@ -22,7 +22,7 @@ Un solo test: `npx vitest run src/lib/dates.test.ts` (o `npx vitest run -t "nomb
 
 No hay linter configurado; `tsc -b` con `strict`, `noUnusedLocals` y `noUnusedParameters` es la única puerta.
 
-Necesita `.env` con `DATABASE_URL` (copiar de `.env.example`). `server/_lib/db.ts` arma el cliente en el primer query; si falta, el handler responde 500 JSON (no tira al importar).
+Necesita `.env` con `DATABASE_URL`, `VITE_NEON_AUTH_URL` y `AUTH_ALLOWED_EMAIL` (copiar de `.env.example`). `server/_lib/db.ts` arma el cliente en el primer query; si falta, el handler responde 500 JSON (no tira al importar). Sin JWT válido o con un email fuera de la allowlist, `/api` responde 401/403.
 
 ## Arquitectura
 

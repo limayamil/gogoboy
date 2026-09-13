@@ -112,6 +112,18 @@ describe('createApiHandler', () => {
     expect(await response.json()).toMatchObject({ method: 'GET' })
   })
 
+  it('corta con el autenticador antes de llegar al handler', async () => {
+    const gated = createApiHandler(
+      [['/api/state', echo]],
+      async () => Response.json({ error: 'No autenticado' }, { status: 401 }),
+    )
+
+    const response = await gated(new Request('https://gogoboy.vercel.app/api/state'))
+
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({ error: 'No autenticado' })
+  })
+
   it('responde 500 en JSON si el handler tira, para no devolver FUNCTION_INVOCATION_FAILED', async () => {
     const boom = createApiHandler([
       [

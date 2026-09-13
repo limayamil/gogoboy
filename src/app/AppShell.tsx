@@ -1,7 +1,8 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Fabs } from '../components/Fabs'
-import { IconCalendar, IconGrid, IconMoon, IconNote, IconSun } from '../components/Icons'
+import { IconCalendar, IconGrid, IconLogout, IconMoon, IconNote, IconSun } from '../components/Icons'
+import { authClient } from '../lib/auth'
 import { ModalProvider } from './modals'
 import { ToastHost } from './ToastHost'
 import { useThemeMode } from './theme'
@@ -116,14 +117,24 @@ export function AppShell() {
           ))}
         </nav>
 
-        <button
-          type="button"
-          className={styles.themeButton}
-          onClick={toggle}
-          aria-label={mode === 'light' ? 'Activar modo oscuro' : 'Activar modo claro'}
-        >
-          {mode === 'light' ? <IconMoon size={18} /> : <IconSun size={18} />}
-        </button>
+        <div className={styles.headerActions}>
+          <button
+            type="button"
+            className={styles.themeButton}
+            onClick={() => authClient.signOut()}
+            aria-label="Cerrar sesión"
+          >
+            <IconLogout size={18} />
+          </button>
+          <button
+            type="button"
+            className={styles.themeButton}
+            onClick={toggle}
+            aria-label={mode === 'light' ? 'Activar modo oscuro' : 'Activar modo claro'}
+          >
+            {mode === 'light' ? <IconMoon size={18} /> : <IconSun size={18} />}
+          </button>
+        </div>
       </header>
 
       <ModalProvider>

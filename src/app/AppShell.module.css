@@ -14,9 +14,102 @@
   position: sticky;
   top: 0;
   z-index: 20;
+  overflow: hidden;
   backdrop-filter: blur(14px);
-  background: color-mix(in srgb, var(--bg) 72%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  background: var(--sky-b);
+  border-bottom: 1px solid color-mix(in srgb, var(--sky-c) 55%, var(--line));
+}
+
+.skyReady {
+  transition:
+    --sky-a 3.2s ease,
+    --sky-b 3.2s ease,
+    --sky-c 3.2s ease,
+    --sky-glow 3.2s ease,
+    background-color 3.2s ease,
+    border-color 3.2s ease;
+}
+
+.sky {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: linear-gradient(
+    105deg,
+    var(--sky-a) 0%,
+    var(--sky-b) 48%,
+    var(--sky-c) 100%
+  );
+}
+
+.skyGlow {
+  position: absolute;
+  width: min(52vw, 340px);
+  height: min(52vw, 340px);
+  left: var(--sky-glow-x);
+  top: var(--sky-glow-y);
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--sky-glow) 0%, transparent 68%);
+}
+
+.skyReady .skyGlow {
+  transition: background 3.2s ease, left 3.2s ease, top 3.2s ease;
+}
+
+.skyRain {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgb(120 150 190 / 20%), rgb(70 90 120 / 8%) 62%, rgb(255 255 255 / 16%));
+}
+
+:global(:root[data-theme='dark']) .skyRain {
+  background:
+    linear-gradient(180deg, rgb(18 28 48 / 42%), rgb(12 16 28 / 22%) 62%, rgb(170 190 220 / 10%));
+}
+
+.skyRain::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 18px;
+  background: linear-gradient(to top, rgb(255 255 255 / 22%), transparent);
+}
+
+.drop {
+  position: absolute;
+  top: -24px;
+  width: 1.8px;
+  border-radius: 999px;
+  background: linear-gradient(to bottom, transparent, rgb(255 255 255 / 90%));
+  animation-name: rain-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.header > :not(.sky) {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes rain-fall {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(16px, calc(var(--header-h) + 40px), 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drop {
+    display: none;
+  }
 }
 
 .brand {
@@ -45,6 +138,7 @@
   font-weight: 800;
   font-size: 19px;
   letter-spacing: -0.02em;
+  text-shadow: 0 1px 10px color-mix(in srgb, var(--sky-b) 70%, transparent);
 }
 
 /* Tabs tipo pildora sobre una capsula, como en design/refe2.jpeg */

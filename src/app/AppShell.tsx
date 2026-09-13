@@ -1,10 +1,11 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Fabs } from '../components/Fabs'
 import { IconCalendar, IconGrid, IconMoon, IconSun } from '../components/Icons'
 import { ModalProvider } from './modals'
 import { ToastHost } from './ToastHost'
 import { useThemeMode } from './theme'
+import { useSky } from './useSky'
 import styles from './AppShell.module.css'
 
 const TABS = [
@@ -27,13 +28,71 @@ function DocumentTitle() {
   return null
 }
 
+const RAIN_DROPS = Array.from({ length: 42 }, (_, index) => ({
+  left: `${(index * 23 + 7) % 100}%`,
+  delay: `${((index * 17) % 160) / 100}s`,
+  duration: `${0.7 + (index % 6) * 0.12}s`,
+  height: 12 + (index % 5) * 5,
+  opacity: 0.4 + (index % 4) * 0.15,
+}))
+
 export function AppShell() {
   const { mode, toggle } = useThemeMode()
+  const { period, raining, palette } = useSky()
+  const [skyReady, setSkyReady] = useState(false)
+
+  useEffect(() => {
+    // El primer frame pinta la franja actual; recien despues animamos
+    // para no arrancar siempre desde el amanecer del @property inicial.
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setSkyReady(true))
+    })
+    return () => cancelAnimationFrame(id)
+  }, [])
+
+  const skyStyle = useMemo(
+    () =>
+      ({
+        '--sky-a': palette.a,
+        '--sky-b': palette.b,
+        '--sky-c': palette.c,
+        '--sky-glow': palette.glow,
+        '--sky-glow-x': palette.glowX,
+        '--sky-glow-y': palette.glowY,
+      }) as CSSProperties,
+    [palette],
+  )
 
   return (
     <div className={styles.shell}>
       <DocumentTitle />
-      <header className={styles.header}>
+      <header
+        className={`${styles.header} ${skyReady ? styles.skyReady : ''}`}
+        data-period={period}
+        data-raining={raining ? 'true' : 'false'}
+        style={skyStyle}
+      >
+        <div className={styles.sky} aria-hidden="true">
+          <span className={styles.skyGlow} />
+          {raining ? (
+            <span className={styles.skyRain}>
+              {RAIN_DROPS.map((drop, index) => (
+                <span
+                  key={index}
+                  className={styles.drop}
+                  style={{
+                    left: drop.left,
+                    height: drop.height,
+                    opacity: drop.opacity,
+                    animationDelay: drop.delay,
+                    animationDuration: drop.duration,
+                  }}
+                />
+              ))}
+            </span>
+          ) : null}
+        </div>
+
         <div className={styles.brand}>
           <span className={styles.logo} aria-hidden="true">
             <img src="/brand/logo-mark.webp" alt="" width="34" height="34" />

@@ -10,7 +10,6 @@
 /* --- Panel de Hoy --- */
 
 .today {
-  min-height: 60vh;
   padding: var(--space-5);
   border-radius: var(--r-lg);
   background: var(--surface);
@@ -413,9 +412,32 @@
   flex-shrink: 0;
 }
 
+/* En desktop las columnas no crecen con el contenido: Hoy queda a la vista
+   y solo scrollean las listas, para poder arrastrar de derecha a izquierda. */
+@media (min-width: 981px) {
+  .layout {
+    height: calc(
+      100dvh - var(--header-h) - var(--space-5) -
+        max(140px, calc(120px + env(safe-area-inset-bottom)))
+    );
+    align-items: stretch;
+  }
+
+  .today,
+  .rail {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
 @media (max-width: 980px) {
   .layout {
     grid-template-columns: 1fr;
+  }
+
+  .today {
+    min-height: 60vh;
   }
 
   .hintDesktop {

@@ -56,6 +56,38 @@
   --dur-fast: 140ms;
   --dur: 220ms;
   --dur-slow: 380ms;
+
+  --sky-a: #cde8fb;
+  --sky-b: #eaf4ff;
+  --sky-c: #fde8d4;
+  --sky-glow: rgb(255 236 190 / 65%);
+  --sky-glow-x: 78%;
+  --sky-glow-y: -20%;
+}
+
+/* Sin @property el navegador no interpola el gradiente al cambiar de franja. */
+@property --sky-a {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #cde8fb;
+}
+
+@property --sky-b {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #eaf4ff;
+}
+
+@property --sky-c {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #fde8d4;
+}
+
+@property --sky-glow {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgb(255 236 190 / 65%);
 }
 
 :root[data-theme='dark'] {

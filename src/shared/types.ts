@@ -34,12 +34,35 @@ export interface TaskLink {
 
 export interface Attachment {
   id: string
-  taskId: string
+  /** Duenio: exactamente uno de los dos, el otro queda en null. */
+  taskId: string | null
+  noteId: string | null
   objectKey: string
   fileName: string
   contentType: string
   sizeBytes: number
   createdAt: string
+}
+
+export interface NoteTag {
+  id: string
+  name: string
+}
+
+export const NOTE_KINDS = ['note', 'password'] as const
+export type NoteKind = (typeof NOTE_KINDS)[number]
+
+export interface Note {
+  id: string
+  kind: NoteKind
+  title: string
+  description: string | null
+  username: string | null
+  password: string | null
+  createdAt: string
+  updatedAt: string
+  tags: NoteTag[]
+  attachments: Attachment[]
 }
 
 export interface Task {
@@ -76,6 +99,7 @@ export interface QuickTask {
 export interface AppState {
   categories: Category[]
   tasks: Task[]
+  notes: Note[]
   quickTasks: QuickTask[]
   /** false = faltan las S3_*; el modal esconde los adjuntos en vez de fallar al subir. */
   storageConfigured: boolean
@@ -112,4 +136,14 @@ export interface QuickTaskInput {
   title: string
   done?: boolean
   position?: number
+}
+
+export interface NoteInput {
+  title: string
+  kind?: NoteKind
+  description?: string | null
+  username?: string | null
+  password?: string | null
+  /** Nombres, no ids: el servidor hace upsert de la etiqueta. */
+  tags?: string[]
 }

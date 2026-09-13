@@ -164,9 +164,37 @@ export const IconFile = ({ size = 20, className }: Props) => (
   </svg>
 )
 
+export const IconNote = ({ size = 20, className }: Props) => (
+  <svg {...base(size)} className={className} aria-hidden="true">
+    <path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+    <path d="M14 3v6h6M8 13h8M8 17h5" />
+  </svg>
+)
+
+export const IconSearch = ({ size = 18, className }: Props) => (
+  <svg {...base(size)} className={className} aria-hidden="true">
+    <circle cx="11" cy="11" r="7" />
+    <path d="m20 20-3.5-3.5" />
+  </svg>
+)
+
 export const IconUpload = ({ size = 22, className }: Props) => (
   <svg {...base(size)} className={className} aria-hidden="true">
     <path d="M12 16V4M8 8l4-4 4 4" />
     <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+  </svg>
+)
+
+export const IconLock = ({ size = 18, className }: Props) => (
+  <svg {...base(size)} className={className} aria-hidden="true">
+    <rect x="5" y="11" width="14" height="10" rx="2" />
+    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+  </svg>
+)
+
+export const IconCopy = ({ size = 18, className }: Props) => (
+  <svg {...base(size)} className={className} aria-hidden="true">
+    <rect x="9" y="9" width="11" height="11" rx="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
   </svg>
 )

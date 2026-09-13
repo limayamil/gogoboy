@@ -7,6 +7,7 @@ import { ThemeProvider } from './app/theme'
 import { TodayView } from './views/TodayView'
 import { CategoriesView } from './views/CategoriesView'
 import { WeekView } from './views/WeekView'
+import { NotesView } from './views/NotesView'
 import './styles/global.css'
 
 const queryClient = new QueryClient({
@@ -35,6 +36,7 @@ createRoot(document.getElementById('root')!).render(
               <Route path="/" element={<TodayView />} />
               <Route path="/categorias" element={<CategoriesView />} />
               <Route path="/semana" element={<WeekView />} />
+              <Route path="/notas" element={<NotesView />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

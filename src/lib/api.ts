@@ -2,6 +2,8 @@ import type {
   AppState,
   Attachment,
   Category,
+  Note,
+  NoteInput,
   QuickTask,
   Subtask,
   Task,
@@ -58,19 +60,31 @@ export const api = {
     request<QuickTask>(`/quick-tasks/${id}`, { method: 'PATCH', body: json(patch) }),
   deleteQuickTask: (id: string) => request<unknown>(`/quick-tasks/${id}`, { method: 'DELETE' }),
 
+  createNote: (input: NoteInput) =>
+    request<Note>('/notes', { method: 'POST', body: json(input) }),
+  updateNote: (id: string, patch: Partial<NoteInput>) =>
+    request<Note>(`/notes/${id}`, { method: 'PATCH', body: json(patch) }),
+  deleteNote: (id: string) => request<unknown>(`/notes/${id}`, { method: 'DELETE' }),
+
   createLink: (input: { taskId: string; url: string; title?: string | null }) =>
     request<TaskLink>('/links', { method: 'POST', body: json(input) }),
   updateLink: (id: string, patch: { url?: string; title?: string | null }) =>
     request<TaskLink>(`/links/${id}`, { method: 'PATCH', body: json(patch) }),
   deleteLink: (id: string) => request<unknown>(`/links/${id}`, { method: 'DELETE' }),
 
-  signUpload: (input: { taskId: string; fileName: string; contentType: string }) =>
+  signUpload: (input: {
+    taskId?: string
+    noteId?: string
+    fileName: string
+    contentType: string
+  }) =>
     request<{ objectKey: string; uploadUrl: string }>('/uploads/sign', {
       method: 'POST',
       body: json(input),
     }),
   createAttachment: (input: {
-    taskId: string
+    taskId?: string
+    noteId?: string
     objectKey: string
     fileName: string
     contentType: string

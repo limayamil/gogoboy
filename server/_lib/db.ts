@@ -1,5 +1,15 @@
 import { neon } from '@neondatabase/serverless'
-import type { Attachment, Category, QuickTask, Subtask, Task, TaskLink } from '../../src/shared/types.ts'
+import type {
+  Attachment,
+  Category,
+  Note,
+  NoteKind,
+  NoteTag,
+  QuickTask,
+  Subtask,
+  Task,
+  TaskLink,
+} from '../../src/shared/types.ts'
 
 type Sql = ReturnType<typeof neon>
 
@@ -66,12 +76,36 @@ export function mapSubtask(row: Row): Subtask {
 export function mapAttachment(row: Row): Attachment {
   return {
     id: row.id as string,
-    taskId: row.task_id as string,
+    taskId: (row.task_id as string | null) ?? null,
+    noteId: (row.note_id as string | null) ?? null,
     objectKey: row.object_key as string,
     fileName: row.file_name as string,
     contentType: row.content_type as string,
     sizeBytes: Number(row.size_bytes),
     createdAt: toIso(row.created_at),
+  }
+}
+
+export function mapNoteTag(row: Row): NoteTag {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+  }
+}
+
+export function mapNote(row: Row, tags: NoteTag[] = [], attachments: Attachment[] = []): Note {
+  const kind: NoteKind = row.kind === 'password' ? 'password' : 'note'
+  return {
+    id: row.id as string,
+    kind,
+    title: row.title as string,
+    description: (row.description as string | null) ?? null,
+    username: (row.username as string | null) ?? null,
+    password: (row.password as string | null) ?? null,
+    createdAt: toIso(row.created_at),
+    updatedAt: toIso(row.updated_at),
+    tags,
+    attachments,
   }
 }
 
@@ -142,4 +176,50 @@ export async function loadTask(id: string): Promise<Task | null> {
     attachments.map(mapAttachment),
     links.map(mapTaskLink),
   )
+}
+
+/** Trae una nota completa (etiquetas y adjuntos) ya mapeada, o null si no existe. */
+export async function loadNote(id: string): Promise<Note | null> {
+  const [note] = (await sql`select * from notes where id = ${id}`) as Row[]
+  if (!note) return null
+  const tags = (await sql`
+    select t.*
+    from note_tags t
+    join note_tag_assignments a on a.tag_id = t.id
+    where a.note_id = ${id}
+    order by t.name
+  `) as Row[]
+  const attachments = (await sql`
+    select * from attachments where note_id = ${id} order by created_at
+  `) as Row[]
+  return mapNote(note, tags.map(mapNoteTag), attachments.map(mapAttachment))
+}
+
+/**
+ * Reemplaza las etiquetas de una nota. Crea las que no existen (por nombre,
+ * sin importar mayusculas) y borra las que quedaron huerfanas.
+ */
+export async function replaceNoteTags(noteId: string, names: string[]): Promise<void> {
+  await sql`delete from note_tag_assignments where note_id = ${noteId}`
+
+  for (const name of names) {
+    const [existing] = (await sql`
+      select id from note_tags where lower(name) = lower(${name}) limit 1
+    `) as Row[]
+    const tagId = existing
+      ? (existing.id as string)
+      : (((await sql`insert into note_tags (name) values (${name}) returning id`) as Row[])[0]
+          .id as string)
+    await sql`
+      insert into note_tag_assignments (note_id, tag_id)
+      values (${noteId}, ${tagId})
+    `
+  }
+
+  await sql`
+    delete from note_tags
+    where not exists (
+      select 1 from note_tag_assignments a where a.tag_id = note_tags.id
+    )
+  `
 }

@@ -1,0 +1,96 @@
+.tagBox {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--line);
+  background: var(--surface-2);
+}
+
+.tagBox:focus-within {
+  border-color: var(--accent-2);
+  background: var(--surface);
+}
+
+.tagRemove {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 2px;
+  border-radius: var(--r-pill);
+  color: var(--ink-faint);
+}
+
+.tagRemove:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.tagInput {
+  flex: 1;
+  min-width: 140px;
+  border: 0;
+  background: transparent;
+  padding: 4px 2px;
+  font: inherit;
+  color: var(--ink);
+}
+
+.tagInput:focus {
+  outline: none;
+}
+
+.tagInput::placeholder {
+  color: var(--ink-faint);
+}
+
+.secretRow {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.secretInput {
+  flex: 1;
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.02em;
+}
+
+.iconBtn {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 42px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  transition: border-color var(--dur-fast) ease, color var(--dur-fast) ease,
+    background var(--dur-fast) ease;
+}
+
+.iconBtn:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--accent-2);
+  background: var(--surface);
+}
+
+.iconBtn:disabled {
+  opacity: 0.4;
+}
+
+.copied {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-2);
+}
+
+.copyError {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+}

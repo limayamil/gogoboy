@@ -1,8 +1,15 @@
 // Validacion de payloads. Funciones puras y sin dependencias de red: son las que
 // cubren los tests de Vitest.
 
-import { STATUSES, URGENCIES } from '../../src/shared/types.ts'
-import type { CategoryInput, Status, TaskInput, Urgency } from '../../src/shared/types.ts'
+import { NOTE_KINDS, STATUSES, URGENCIES } from '../../src/shared/types.ts'
+import type {
+  CategoryInput,
+  NoteInput,
+  NoteKind,
+  Status,
+  TaskInput,
+  Urgency,
+} from '../../src/shared/types.ts'
 import { HttpError } from './http.ts'
 
 function fail(message: string): never {
@@ -160,6 +167,83 @@ export function parseTaskPatch(input: Record<string, unknown>): Partial<TaskInpu
     patch.todayPosition = nullableInt(input.todayPosition, 'todayPosition')
   }
   if ('position' in input) patch.position = int(input.position, 'position')
+  if (Object.keys(patch).length === 0) fail('No hay nada para actualizar')
+  return patch
+}
+
+const MAX_TAGS = 20
+const MAX_TAG_LEN = 40
+
+/**
+ * Etiquetas de notas: se crean al vuelo. Recorta, salta vacios, deduplica
+ * sin importar mayusculas y se queda con la primera capitalizacion.
+ */
+export function parseTagNames(value: unknown, field = 'tags'): string[] {
+  if (value == null) return []
+  if (!Array.isArray(value)) fail(`"${field}" debe ser una lista`)
+  if (value.length > MAX_TAGS) fail(`"${field}" admite como maximo ${MAX_TAGS} etiquetas`)
+
+  const result: string[] = []
+  const seen = new Set<string>()
+  for (let index = 0; index < value.length; index++) {
+    const raw = value[index]
+    if (raw == null) continue
+    if (typeof raw !== 'string') fail(`"${field}[${index}]" debe ser texto`)
+    const trimmed = raw.trim()
+    if (!trimmed) continue
+    if (trimmed.length > MAX_TAG_LEN) {
+      fail(`"${field}[${index}]" supera los ${MAX_TAG_LEN} caracteres`)
+    }
+    const key = trimmed.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    result.push(trimmed)
+  }
+  return result
+}
+
+function parseNoteKind(value: unknown): NoteKind {
+  if (value == null) return 'note'
+  if (typeof value !== 'string' || !(NOTE_KINDS as readonly string[]).includes(value)) {
+    fail('"kind" debe ser note o password')
+  }
+  return value as NoteKind
+}
+
+export function parseNoteCreate(input: Record<string, unknown>): NoteInput {
+  const kind = parseNoteKind(input.kind)
+  const title = requiredText(input.title, 'title', 200)
+
+  if (kind === 'password') {
+    return {
+      title,
+      kind,
+      description: null,
+      username: optionalText(input.username, 'username', 200),
+      password: requiredText(input.password, 'password', 2000),
+      tags: [],
+    }
+  }
+
+  return {
+    title,
+    kind,
+    description: optionalText(input.description, 'description'),
+    username: null,
+    password: null,
+    tags: parseTagNames(input.tags),
+  }
+}
+
+export function parseNotePatch(input: Record<string, unknown>): Partial<NoteInput> {
+  if ('kind' in input) fail('No se puede cambiar el tipo de una nota')
+
+  const patch: Partial<NoteInput> = {}
+  if ('title' in input) patch.title = requiredText(input.title, 'title', 200)
+  if ('description' in input) patch.description = optionalText(input.description, 'description')
+  if ('username' in input) patch.username = optionalText(input.username, 'username', 200)
+  if ('password' in input) patch.password = requiredText(input.password, 'password', 2000)
+  if ('tags' in input) patch.tags = parseTagNames(input.tags)
   if (Object.keys(patch).length === 0) fail('No hay nada para actualizar')
   return patch
 }

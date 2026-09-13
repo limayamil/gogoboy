@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import { IconBolt, IconPlus, IconTrash } from './Icons'
 import { useModals } from '../app/modals'
+import { composeKindFromFilter, PASSWORDS_FILTER } from '../lib/notes'
 import {
   useAppState,
   useCreateQuickTask,
@@ -10,11 +12,17 @@ import {
 import styles from './Fabs.module.css'
 
 /**
- * Los dos FABs del boceto: el rayo abre el checklist de tareas rápidas por encima
- * del botón, y el más abre el formulario completo de tarea.
+ * Los dos FABs: el rayo abre las tareas rápidas, y el más crea una tarea o,
+ * si estás en Notas, una nota (o una contraseña, si el filtro reservado está activo).
  */
 export function Fabs() {
-  const { openTask } = useModals()
+  const { pathname } = useLocation()
+  const [params] = useSearchParams()
+  const onNotes = pathname === '/notas'
+  const composeKind = composeKindFromFilter(
+    onNotes && params.get('vista') === 'contrasenas' ? PASSWORDS_FILTER : null,
+  )
+  const { openTask, openNote } = useModals()
   const { data } = useAppState()
   const quickTasks = data?.quickTasks ?? []
 
@@ -125,8 +133,10 @@ export function Fabs() {
         <button
           type="button"
           className={`${styles.fab} ${styles.fabAdd}`}
-          onClick={() => openTask({ taskId: null })}
-          aria-label="Nueva tarea"
+          onClick={() => (onNotes ? openNote(null, composeKind) : openTask({ taskId: null }))}
+          aria-label={
+            onNotes ? (composeKind === 'password' ? 'Nueva contraseña' : 'Nueva nota') : 'Nueva tarea'
+          }
         >
           <IconPlus size={24} />
         </button>

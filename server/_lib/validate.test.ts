@@ -4,6 +4,9 @@ import {
   dateOrNull,
   httpUrl,
   parseCategoryInput,
+  parseNoteCreate,
+  parseNotePatch,
+  parseTagNames,
   parseTaskCreate,
   parseTaskPatch,
 } from './validate.ts'
@@ -85,6 +88,114 @@ describe('parseCategoryInput', () => {
       position: undefined,
     })
     expect(() => parseCategoryInput({ name: 'Casa' })).toThrow(HttpError)
+  })
+})
+
+describe('parseTagNames', () => {
+  it('recorta, ignora vacios duplicados y conserva la primera capitalizacion', () => {
+    expect(parseTagNames([' Casa ', 'casa', 'Trabajo'])).toEqual(['Casa', 'Trabajo'])
+  })
+
+  it('trata null como ninguna etiqueta', () => {
+    expect(parseTagNames(null)).toEqual([])
+  })
+
+  it('rechaza algo que no sea lista', () => {
+    expect(() => parseTagNames('casa')).toThrow(HttpError)
+  })
+
+  it('rechaza una etiqueta demasiado larga', () => {
+    expect(() => parseTagNames(['x'.repeat(41)])).toThrow(HttpError)
+  })
+})
+
+describe('parseNoteCreate', () => {
+  it('exige titulo y deja descripcion y etiquetas opcionales', () => {
+    expect(parseNoteCreate({ title: '  Idea ' })).toEqual({
+      title: 'Idea',
+      kind: 'note',
+      description: null,
+      username: null,
+      password: null,
+      tags: [],
+    })
+  })
+
+  it('acepta descripcion y etiquetas', () => {
+    expect(
+      parseNoteCreate({ title: 'Idea', description: '  detalle  ', tags: ['inbox'] }),
+    ).toEqual({
+      title: 'Idea',
+      kind: 'note',
+      description: 'detalle',
+      username: null,
+      password: null,
+      tags: ['inbox'],
+    })
+  })
+
+  it('una contraseña exige clave, usuario opcional y no guarda etiquetas', () => {
+    expect(
+      parseNoteCreate({
+        title: ' Gmail ',
+        kind: 'password',
+        username: '  yo@correo.com ',
+        password: '  secreto ',
+        tags: ['inbox'],
+        description: 'no va',
+      }),
+    ).toEqual({
+      title: 'Gmail',
+      kind: 'password',
+      description: null,
+      username: 'yo@correo.com',
+      password: 'secreto',
+      tags: [],
+    })
+  })
+
+  it('exige clave si el tipo es contraseña', () => {
+    expect(() => parseNoteCreate({ title: 'Gmail', kind: 'password' })).toThrow(HttpError)
+  })
+
+  it('rechaza un tipo desconocido', () => {
+    expect(() => parseNoteCreate({ title: 'x', kind: 'pin' })).toThrow(HttpError)
+  })
+
+  it('exige un titulo no vacio', () => {
+    expect(() => parseNoteCreate({ title: '   ' })).toThrow(HttpError)
+    expect(() => parseNoteCreate({})).toThrow(HttpError)
+  })
+})
+
+describe('parseNotePatch', () => {
+  it('solo devuelve las claves presentes', () => {
+    expect(parseNotePatch({ title: 'Nuevo' })).toEqual({ title: 'Nuevo' })
+  })
+
+  it('distingue "no mandaron description" de "mandaron description en null"', () => {
+    expect('description' in parseNotePatch({ title: 'x' })).toBe(false)
+    expect(parseNotePatch({ description: null })).toEqual({ description: null })
+  })
+
+  it('reemplaza etiquetas cuando vienen en el payload', () => {
+    expect(parseNotePatch({ tags: ['a', 'b'] })).toEqual({ tags: ['a', 'b'] })
+  })
+
+  it('copia usuario y clave solo si vienen en el payload', () => {
+    expect(parseNotePatch({ username: '  ana ' })).toEqual({ username: 'ana' })
+    expect(parseNotePatch({ username: '   ' })).toEqual({ username: null })
+    expect(parseNotePatch({ password: '  nueva ' })).toEqual({ password: 'nueva' })
+    expect('password' in parseNotePatch({ title: 'x' })).toBe(false)
+  })
+
+  it('no deja vaciar la clave ni cambiar el tipo', () => {
+    expect(() => parseNotePatch({ password: '   ' })).toThrow(HttpError)
+    expect(() => parseNotePatch({ kind: 'password' })).toThrow(HttpError)
+  })
+
+  it('rechaza un patch vacio', () => {
+    expect(() => parseNotePatch({})).toThrow(HttpError)
   })
 })
 

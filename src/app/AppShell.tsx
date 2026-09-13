@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Fabs } from '../components/Fabs'
-import { IconCalendar, IconGrid, IconMoon, IconSun } from '../components/Icons'
+import { IconCalendar, IconGrid, IconMoon, IconNote, IconSun } from '../components/Icons'
 import { ModalProvider } from './modals'
 import { ToastHost } from './ToastHost'
 import { useThemeMode } from './theme'
@@ -12,12 +12,14 @@ const TABS = [
   { to: '/', label: 'Hoy', Icon: IconSun },
   { to: '/categorias', label: 'Categorías', Icon: IconGrid },
   { to: '/semana', label: 'Semana', Icon: IconCalendar },
+  { to: '/notas', label: 'Notas', Icon: IconNote },
 ]
 
 const TITLES: Record<string, string> = {
   '/': 'Hoy · GoGoBoy',
   '/categorias': 'Categorías · GoGoBoy',
   '/semana': 'Semana · GoGoBoy',
+  '/notas': 'Notas · GoGoBoy',
 }
 
 function DocumentTitle() {

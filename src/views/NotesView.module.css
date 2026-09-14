@@ -93,51 +93,70 @@
   transform: none;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: var(--space-4);
-}
-
-.card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: var(--space-4);
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
   border-radius: var(--r-lg);
   background: var(--surface);
   box-shadow: var(--shadow-sm);
-  text-align: left;
-  transition: box-shadow var(--dur) ease, transform var(--dur-fast) var(--ease-out);
-}
-
-.card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-.cardTitle {
-  font-size: 17px;
-  font-weight: 800;
-  overflow-wrap: anywhere;
-}
-
-.cardBody {
-  font-size: 13.5px;
-  color: var(--ink-soft);
-  line-height: 1.45;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.cardMeta {
+.row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  text-align: left;
+  transition: background var(--dur-fast) ease;
+}
+
+.list li:last-child .row {
+  border-bottom: 0;
+}
+
+.row:hover {
+  background: var(--surface-2);
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: -2px;
+}
+
+.rowMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rowTitle {
+  font-size: 15.5px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.rowPreview {
+  font-size: 13px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowMeta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 8px;
-  margin-top: auto;
+  flex-shrink: 0;
+  max-width: 46%;
 }
 
 .chips {
@@ -167,6 +186,19 @@
 .noTags {
   font-size: 12px;
   color: var(--ink-faint);
+}
+
+@media (max-width: 640px) {
+  .row {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .rowMeta {
+    max-width: 100%;
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 .attach {

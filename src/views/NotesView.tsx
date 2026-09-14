@@ -136,49 +136,53 @@ export function NotesView() {
       ) : emptyFilter ? (
         <p className={styles.noResults}>Nada coincide con esa búsqueda.</p>
       ) : (
-        <div className={`${styles.grid} staggerFade`}>
+        <ul className={`${styles.list} staggerFade`} aria-label={passwordsOn ? 'Contraseñas' : 'Notas'}>
           {visible.map((note) => (
-            <NoteCard key={note.id} note={note} onOpen={() => openNote(note.id, note.kind)} />
+            <NoteRow key={note.id} note={note} onOpen={() => openNote(note.id, note.kind)} />
           ))}
-        </div>
+        </ul>
       )}
     </div>
   )
 }
 
-function NoteCard({ note, onOpen }: { note: Note; onOpen: () => void }) {
+function NoteRow({ note, onOpen }: { note: Note; onOpen: () => void }) {
   const password = isPasswordNote(note)
   const preview = password ? note.username : excerpt(note.description)
   return (
-    <button type="button" className={styles.card} onClick={onOpen}>
-      <h2 className={styles.cardTitle}>{note.title}</h2>
-      {preview ? <p className={styles.cardBody}>{preview}</p> : null}
-      <footer className={styles.cardMeta}>
-        {password ? (
-          <span className={styles.chips}>
-            <span className={`${styles.chip} ${styles.chipLock}`}>
-              <IconLock size={11} />
-              Contraseñas
-            </span>
-          </span>
-        ) : note.tags.length > 0 ? (
-          <span className={styles.chips}>
-            {note.tags.map((tag) => (
-              <span key={tag.id} className={styles.chip}>
-                {tag.name}
+    <li>
+      <button type="button" className={styles.row} onClick={onOpen}>
+        <span className={styles.rowMain}>
+          <span className={styles.rowTitle}>{note.title}</span>
+          {preview ? <span className={styles.rowPreview}>{preview}</span> : null}
+        </span>
+        <span className={styles.rowMeta}>
+          {password ? (
+            <span className={styles.chips}>
+              <span className={`${styles.chip} ${styles.chipLock}`}>
+                <IconLock size={11} />
+                Contraseñas
               </span>
-            ))}
-          </span>
-        ) : (
-          <span className={styles.noTags}>Sin etiqueta</span>
-        )}
-        {!password && note.attachments.length > 0 ? (
-          <span className={styles.attach}>
-            <IconPaperclip size={13} />
-            {note.attachments.length}
-          </span>
-        ) : null}
-      </footer>
-    </button>
+            </span>
+          ) : note.tags.length > 0 ? (
+            <span className={styles.chips}>
+              {note.tags.map((tag) => (
+                <span key={tag.id} className={styles.chip}>
+                  {tag.name}
+                </span>
+              ))}
+            </span>
+          ) : (
+            <span className={styles.noTags}>Sin etiqueta</span>
+          )}
+          {!password && note.attachments.length > 0 ? (
+            <span className={styles.attach}>
+              <IconPaperclip size={13} />
+              {note.attachments.length}
+            </span>
+          ) : null}
+        </span>
+      </button>
+    </li>
   )
 }

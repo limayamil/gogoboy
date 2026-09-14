@@ -52,6 +52,9 @@ export interface NoteTag {
 export const NOTE_KINDS = ['note', 'password'] as const
 export type NoteKind = (typeof NOTE_KINDS)[number]
 
+/** Tope de description (HTML). El markup es mas verboso que el texto plano de 5000. */
+export const RICH_TEXT_MAX = 20_000
+
 export interface Note {
   id: string
   kind: NoteKind

@@ -166,6 +166,14 @@ describe('parseNoteCreate', () => {
     expect(() => parseNoteCreate({ title: '   ' })).toThrow(HttpError)
     expect(() => parseNoteCreate({})).toThrow(HttpError)
   })
+
+  it('acepta una description HTML larga y rechaza si se pasa del tope', () => {
+    const html = `<p>${'a'.repeat(6000)}</p>`
+    expect(parseNoteCreate({ title: 'Larga', description: html }).description).toBe(html)
+    expect(() =>
+      parseNoteCreate({ title: 'Larga', description: 'x'.repeat(20_001) }),
+    ).toThrow(HttpError)
+  })
 })
 
 describe('parseNotePatch', () => {

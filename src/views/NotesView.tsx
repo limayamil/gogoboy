@@ -4,15 +4,10 @@ import { useModals } from '../app/modals'
 import { ErrorState, LoadingState } from '../components/Feedback'
 import { IconLock, IconNote, IconPaperclip, IconSearch } from '../components/Icons'
 import { filterNotes, isPasswordNote, PASSWORDS_FILTER, uniqueNoteTags } from '../lib/notes'
+import { richTextExcerpt } from '../lib/rich-text'
 import { useAppState } from '../lib/store'
 import type { Note } from '../shared/types'
 import styles from './NotesView.module.css'
-
-function excerpt(text: string | null): string {
-  if (!text) return ''
-  const compact = text.replace(/\s+/g, ' ').trim()
-  return compact.length > 160 ? `${compact.slice(0, 160).trimEnd()}…` : compact
-}
 
 export function NotesView() {
   const { data, isPending, error } = useAppState()
@@ -148,7 +143,7 @@ export function NotesView() {
 
 function NoteRow({ note, onOpen }: { note: Note; onOpen: () => void }) {
   const password = isPasswordNote(note)
-  const preview = password ? note.username : excerpt(note.description)
+  const preview = password ? note.username : richTextExcerpt(note.description)
   return (
     <li>
       <button type="button" className={styles.row} onClick={onOpen}>

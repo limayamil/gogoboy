@@ -11,6 +11,7 @@ import {
   IconSun,
 } from '../components/Icons'
 import { useColorOf } from '../lib/palette'
+import { richTextExcerpt } from '../lib/rich-text'
 import { formatShortDate } from '../lib/dates'
 import { useAppState, useUpdateTask } from '../lib/store'
 import type { Task, Urgency } from '../shared/types'
@@ -133,6 +134,7 @@ function TaskCard({ task, tint, dot }: { task: Task; tint: string; dot: string }
   const { openTask } = useModals()
   const updateTask = useUpdateTask()
   const doneSubtasks = task.subtasks.filter((subtask) => subtask.done).length
+  const preview = richTextExcerpt(task.description, 160)
 
   return (
     <li className={styles.task} style={{ background: tint }}>
@@ -152,7 +154,7 @@ function TaskCard({ task, tint, dot }: { task: Task; tint: string; dot: string }
         ) : null}
       </div>
 
-      {task.description ? <p className={styles.taskDescription}>{task.description}</p> : null}
+      {preview ? <p className={styles.taskDescription}>{preview}</p> : null}
 
       <div className={styles.meta}>
         <span className={`${styles.badge} ${styles[`urgency_${task.urgency}`]}`}>

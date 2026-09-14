@@ -1,4 +1,5 @@
 import type { Note, NoteKind, NoteTag } from '../shared/types'
+import { richTextPlain } from './rich-text'
 
 /** Filtro reservado: no es una etiqueta, vive al lado de "Todas". */
 export const PASSWORDS_FILTER = 'passwords'
@@ -7,7 +8,7 @@ export type NotesFilter = string | null
 
 function haystack(note: Note): string {
   if (note.kind === 'password') return `${note.title} ${note.username ?? ''}`
-  return `${note.title} ${note.description ?? ''}`
+  return `${note.title} ${richTextPlain(note.description)}`
 }
 
 /** Filtro de la vista Notas: query, etiqueta o el chip reservado de contraseñas. */

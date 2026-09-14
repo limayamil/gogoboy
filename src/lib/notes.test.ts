@@ -44,6 +44,14 @@ describe('filterNotes', () => {
     expect(filterNotes(notes, 'idea', null).map((n) => n.id)).toEqual(['n2'])
   })
 
+  it('busca el texto visible, no los tags del HTML', () => {
+    const htmlNotes = [
+      note({ id: 'n4', title: 'Receta', description: '<p>tarta de <strong>manzana</strong></p>' }),
+    ]
+    expect(filterNotes(htmlNotes, 'manzana', null).map((n) => n.id)).toEqual(['n4'])
+    expect(filterNotes(htmlNotes, 'strong', null)).toEqual([])
+  })
+
   it('en contraseñas busca titulo y usuario, nunca la clave', () => {
     expect(filterNotes(notes, 'correo', null).map((n) => n.id)).toEqual(['p1'])
     expect(filterNotes(notes, 'secreto-gmail', null)).toEqual([])

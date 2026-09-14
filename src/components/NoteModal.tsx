@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Modal } from './Modal'
+import { RichTextEditor } from './RichTextEditor'
 import {
   IconClose,
   IconCopy,
@@ -15,6 +16,7 @@ import {
 import { api } from '../lib/api'
 import { compressImage } from '../lib/image'
 import { uniqueNoteTags } from '../lib/notes'
+import { serializeRichText } from '../lib/rich-text'
 import { errorMessage, toastError } from '../lib/toast'
 import {
   useAppState,
@@ -297,7 +299,7 @@ export function NoteModal({
         }
       : {
           title: trimmed,
-          description: description.trim() || null,
+          description: serializeRichText(description),
           tags,
         }
 
@@ -313,7 +315,7 @@ export function NoteModal({
               }
             : {
                 title: trimmed,
-                description: description.trim() || null,
+                description: serializeRichText(description),
                 tags,
               },
         })
@@ -475,13 +477,12 @@ export function NoteModal({
         ) : (
           <div className={styles.group}>
             <span className={styles.label}>Descripción</span>
-            <textarea
-              className={styles.textarea}
-              rows={6}
+            <RichTextEditor
               value={description}
               placeholder="Escribí lo que quieras guardar"
-              data-paste-text
-              onChange={(event) => setDescription(event.target.value)}
+              minHeight={180}
+              aria-label="Descripción"
+              onChange={setDescription}
             />
           </div>
         )}

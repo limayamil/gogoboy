@@ -1,7 +1,7 @@
 // Validacion de payloads. Funciones puras y sin dependencias de red: son las que
 // cubren los tests de Vitest.
 
-import { NOTE_KINDS, STATUSES, URGENCIES } from '../../src/shared/types.ts'
+import { NOTE_KINDS, RICH_TEXT_MAX, STATUSES, URGENCIES } from '../../src/shared/types.ts'
 import type {
   CategoryInput,
   NoteInput,
@@ -142,7 +142,7 @@ export function parseTaskCreate(input: Record<string, unknown>): TaskInput {
   return {
     title: requiredText(input.title, 'title', 200),
     categoryId: uuidOrNull(input.categoryId, 'categoryId'),
-    description: optionalText(input.description, 'description'),
+    description: optionalText(input.description, 'description', RICH_TEXT_MAX),
     notes: optionalText(input.notes, 'notes'),
     urgency: input.urgency == null ? 'media' : urgency(input.urgency),
     deadline: dateOrNull(input.deadline, 'deadline'),
@@ -156,7 +156,7 @@ export function parseTaskPatch(input: Record<string, unknown>): Partial<TaskInpu
   const patch: Partial<TaskInput> = {}
   if ('title' in input) patch.title = requiredText(input.title, 'title', 200)
   if ('categoryId' in input) patch.categoryId = uuidOrNull(input.categoryId, 'categoryId')
-  if ('description' in input) patch.description = optionalText(input.description, 'description')
+  if ('description' in input) patch.description = optionalText(input.description, 'description', RICH_TEXT_MAX)
   if ('notes' in input) patch.notes = optionalText(input.notes, 'notes')
   if ('urgency' in input) patch.urgency = urgency(input.urgency)
   if ('deadline' in input) patch.deadline = dateOrNull(input.deadline, 'deadline')
@@ -228,7 +228,7 @@ export function parseNoteCreate(input: Record<string, unknown>): NoteInput {
   return {
     title,
     kind,
-    description: optionalText(input.description, 'description'),
+    description: optionalText(input.description, 'description', RICH_TEXT_MAX),
     username: null,
     password: null,
     tags: parseTagNames(input.tags),
@@ -240,7 +240,7 @@ export function parseNotePatch(input: Record<string, unknown>): Partial<NoteInpu
 
   const patch: Partial<NoteInput> = {}
   if ('title' in input) patch.title = requiredText(input.title, 'title', 200)
-  if ('description' in input) patch.description = optionalText(input.description, 'description')
+  if ('description' in input) patch.description = optionalText(input.description, 'description', RICH_TEXT_MAX)
   if ('username' in input) patch.username = optionalText(input.username, 'username', 200)
   if ('password' in input) patch.password = requiredText(input.password, 'password', 2000)
   if ('tags' in input) patch.tags = parseTagNames(input.tags)

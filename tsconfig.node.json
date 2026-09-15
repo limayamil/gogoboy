@@ -15,5 +15,5 @@
     "noUnusedParameters": true,
     "skipLibCheck": true
   },
-  "include": ["api", "server", "scripts", "vite.config.ts", "src/shared"]
+  "include": ["api", "server", "scripts", "vite.config.ts", "src/shared", "src/lib/dates.ts"]
 }

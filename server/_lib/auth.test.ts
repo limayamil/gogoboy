@@ -3,10 +3,10 @@ import { createAuthenticator } from './auth.ts'
 
 const allowed = 'yo@example.com'
 
-function request(init: { method?: string; authorization?: string }) {
+function request(init: { method?: string; authorization?: string; path?: string }) {
   const headers = new Headers()
   if (init.authorization) headers.set('authorization', init.authorization)
-  return new Request('https://gogoboy.vercel.app/api/state', {
+  return new Request(`https://gogoboy.vercel.app${init.path ?? '/api/state'}`, {
     method: init.method ?? 'GET',
     headers,
   })
@@ -74,5 +74,58 @@ describe('createAuthenticator', () => {
 
     const response = await authenticate(request({ authorization: 'Bearer ok' }))
     expect(response?.status).toBe(403)
+  })
+
+  it('en /api/mcp deja pasar el token de agente, sin verificar JWT', async () => {
+    const authenticate = createAuthenticator({
+      allowedEmail: allowed,
+      agentToken: 'agente-secreto',
+      verifyToken: async () => {
+        throw new Error('no deberia verificar JWT en MCP')
+      },
+    })
+
+    expect(
+      await authenticate(request({ path: '/api/mcp', authorization: 'Bearer agente-secreto' })),
+    ).toBeNull()
+  })
+
+  it('en /api/mcp responde 401 si el token de agente no coincide', async () => {
+    const authenticate = createAuthenticator({
+      allowedEmail: allowed,
+      agentToken: 'agente-secreto',
+      verifyToken: async () => ({ email: allowed }),
+    })
+
+    const response = await authenticate(
+      request({ path: '/api/mcp', authorization: 'Bearer otro' }),
+    )
+    expect(response?.status).toBe(401)
+    expect(await response?.json()).toEqual({ error: 'No autenticado' })
+  })
+
+  it('no acepta el token de agente en el resto de /api', async () => {
+    const authenticate = createAuthenticator({
+      allowedEmail: allowed,
+      agentToken: 'agente-secreto',
+      verifyToken: async () => null,
+    })
+
+    const response = await authenticate(request({ authorization: 'Bearer agente-secreto' }))
+    expect(response?.status).toBe(401)
+  })
+
+  it('en /api/mcp responde 503 si el token de agente no esta configurado', async () => {
+    const authenticate = createAuthenticator({
+      allowedEmail: allowed,
+      agentToken: '',
+      verifyToken: async () => ({ email: allowed }),
+    })
+
+    const response = await authenticate(
+      request({ path: '/api/mcp', authorization: 'Bearer lo-que-sea' }),
+    )
+    expect(response?.status).toBe(503)
+    expect(await response?.json()).toEqual({ error: 'MCP no configurado' })
   })
 })

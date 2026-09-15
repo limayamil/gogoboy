@@ -52,14 +52,26 @@ responde `NOT_FOUND` en `/api/categories/:id`. Por eso:
 - `api/[resource]/[id].ts` cubre dos (`/api/categories/:id`, `/api/uploads/sign`, …)
 
 Para que el deploy funcione hay que cargar las variables de entorno en
-**Project Settings -> Environment Variables**: `DATABASE_URL` y, si queres adjuntos,
-las `S3_*`. Sin `DATABASE_URL` la funcion responde 500 y la app muestra el error.
+**Project Settings -> Environment Variables**: `DATABASE_URL`, auth (`NEON_AUTH_URL`,
+`AUTH_ALLOWED_EMAIL`) y, si queres adjuntos, las `S3_*`. Sin `DATABASE_URL` la
+funcion responde 500 y la app muestra el error.
 
 El `vercel.json` define el build (`npm run build` -> `dist`) y el fallback del SPA, para
 que refrescar en `/semana` o `/categorias` no devuelva 404.
 
 > Si agregas un endpoint en `server/`, sumalo a `server/lib/api-handler.ts`.
 > El servidor de desarrollo reenvia todo `/api/*` a ese mismo handler.
+
+## MCP (Grok y otros agentes)
+
+`POST /api/mcp` es un servidor MCP JSON-RPC de **solo lectura** (hoy, semana, tareas,
+notas). No usa el JWT del browser: va con `AUTH_AGENT_TOKEN` (Bearer). Ese token no
+abre el resto de `/api`. Las notas tipo password no se exponen.
+
+1. Generar un token (`openssl rand -hex 32`) y cargarlo en Vercel como `AUTH_AGENT_TOKEN`.
+2. Cargar `GOGOBOY_TZ=America/Argentina/Buenos_Aires` (Vercel es UTC).
+3. En [grok.com/connectors](https://grok.com/connectors) → Custom, URL
+   `https://<tu-dominio>/api/mcp` y el mismo token como Authorization.
 
 ## Adjuntos
 

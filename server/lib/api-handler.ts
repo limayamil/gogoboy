@@ -15,6 +15,7 @@ import { createApiHandler, type Route } from './router.ts'
 import { authenticateRequest } from '../_lib/auth.ts'
 
 import state from '../state.ts'
+import mcp from '../mcp.ts'
 import categories from '../categories/index.ts'
 import categoryById from '../categories/[id].ts'
 import tasks from '../tasks/index.ts'
@@ -33,6 +34,7 @@ import uploadsSign from '../uploads/sign.ts'
 
 const routes: Route[] = [
   ['/api/state', state],
+  ['/api/mcp', mcp],
   ['/api/categories', categories],
   ['/api/categories/:id', categoryById],
   ['/api/tasks', tasks],

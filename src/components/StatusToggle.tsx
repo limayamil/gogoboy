@@ -1,3 +1,4 @@
+import { celebrateFromPointer, shouldCelebrateStatus } from '../lib/confetti'
 import type { Status } from '../shared/types'
 import styles from './StatusToggle.module.css'
 
@@ -27,7 +28,9 @@ export function StatusToggle({ status, onChange, size = 'md' }: Props) {
       className={`${styles.toggle} ${styles[size]} ${styles[status]}`}
       onClick={(event) => {
         event.stopPropagation()
-        onChange(NEXT[status])
+        const next = NEXT[status]
+        if (shouldCelebrateStatus(status, next)) celebrateFromPointer(event)
+        onChange(next)
       }}
       aria-label={`Estado: ${LABEL[status]}. Tocá para cambiar.`}
       title={LABEL[status]}

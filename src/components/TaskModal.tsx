@@ -17,6 +17,7 @@ import { api } from '../lib/api'
 import { addDays, formatShortDate, toDateKey, todayKey } from '../lib/dates'
 import { compressImage } from '../lib/image'
 import { useColorOf } from '../lib/palette'
+import { celebrateFromPointer, shouldCelebrateChecked, shouldCelebrateStatus } from '../lib/confetti'
 import { errorMessage, toastError } from '../lib/toast'
 import { isEmptyRichText, serializeRichText } from '../lib/rich-text'
 import {
@@ -583,7 +584,10 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
                   aria-checked={form.status === level}
                   className={`${styles.segmentItem} ${form.status === level ? styles.segmentOn : ''}`}
                   style={form.status === level ? { background: 'var(--accent-2)' } : undefined}
-                  onClick={() => set('status', level)}
+                  onClick={(event) => {
+                    if (shouldCelebrateStatus(form.status, level)) celebrateFromPointer(event)
+                    set('status', level)
+                  }}
                 >
                   {STATUS_LABEL[level]}
                 </button>
@@ -778,9 +782,10 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
                         type="checkbox"
                         className={styles.checkbox}
                         checked={subtask.done}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          if (shouldCelebrateChecked(e.target.checked)) celebrateFromPointer()
                           updateSubtask.mutate({ id: subtask.id, patch: { done: e.target.checked } })
-                        }
+                        }}
                       />
                       <span className={subtask.done ? styles.subtaskDone : undefined}>
                         {subtask.title}

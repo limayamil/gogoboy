@@ -93,6 +93,23 @@ export function useDeleteTask() {
   })
 }
 
+/** Un solo mutate para no invalidar el cache una vez por fila al reordenar Hoy. */
+export function useReorderToday() {
+  return useOptimistic({
+    mutationFn: (positions: { id: string; todayPosition: number }[]) =>
+      Promise.all(positions.map(({ id, todayPosition }) => api.updateTask(id, { todayPosition }))),
+    optimistic: (state, positions) => {
+      const byId = new Map(positions.map((item) => [item.id, item.todayPosition]))
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          byId.has(task.id) ? { ...task, todayPosition: byId.get(task.id)! } : task,
+        ),
+      }
+    },
+  })
+}
+
 // --- Subtareas ------------------------------------------------------------
 
 export function useCreateSubtask() {

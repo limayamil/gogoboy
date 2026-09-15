@@ -81,11 +81,11 @@
   border-radius: var(--r-md);
   border: 1.5px solid transparent;
   cursor: grab;
-  transition: transform 140ms ease, box-shadow 140ms ease;
+  /* El transform lo maneja dnd-kit al reordenar; el hover no puede pelearle. */
+  transition: box-shadow 140ms ease;
 }
 
 .todayRow:hover {
-  transform: translateX(2px);
   box-shadow: var(--shadow-sm);
 }
 

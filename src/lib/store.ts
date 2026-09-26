@@ -1,10 +1,4 @@
-/**
- * Capa de datos: un unico cache (`['state']`) con todo el estado de la app.
- *
- * Cada mutacion escribe primero en el cache y despues confirma contra la API. Esto es
- * lo que hace que soltar una tarjeta o tildar un check se sienta instantaneo; si la
- * request falla, `onError` restaura el snapshot anterior.
- */
+import { useCallback } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 import { api, type LinkDraft } from './api'
@@ -13,7 +7,14 @@ import type { AppState, Category, Note, NoteInput, QuickTask, Task, TaskInput } 
 
 const KEY = ['state'] as const
 
-const EMPTY: AppState = { categories: [], tasks: [], notes: [], quickTasks: [], storageConfigured: false }
+const EMPTY: AppState = {
+  categories: [],
+  tasks: [],
+  notes: [],
+  quickTasks: [],
+  storageConfigured: false,
+  version: '',
+}
 
 export function useAppState() {
   return useQuery({ queryKey: KEY, queryFn: api.getState })
@@ -23,10 +24,18 @@ function patchCache(client: QueryClient, update: (state: AppState) => AppState) 
   client.setQueryData<AppState>(KEY, (state) => update(state ?? EMPTY))
 }
 
-/** Snapshot + rollback: el patron que repiten todas las mutaciones de abajo. */
+/**
+ * Snapshot + rollback: el patron que repiten todas las mutaciones de abajo.
+ *
+ * `commit` escribe en el cache la entidad que devolvio el servidor. Es lo que evita
+ * tener que invalidar `['state']` y re-descargar las tablas enteras despues de cada
+ * click: la respuesta del PATCH ya trae la version autoritativa de lo que cambio.
+ * La invalidacion queda solo para el camino de error, despues del rollback, como red.
+ */
 function useOptimistic<TVars, TData>(options: {
   mutationFn: (vars: TVars) => Promise<TData>
   optimistic: (state: AppState, vars: TVars) => AppState
+  commit?: (state: AppState, data: TData, vars: TVars) => AppState
 }) {
   const client = useQueryClient()
 
@@ -38,11 +47,13 @@ function useOptimistic<TVars, TData>(options: {
       patchCache(client, (state) => options.optimistic(state, vars))
       return { previous }
     },
+    onSuccess(data, vars) {
+      const commit = options.commit
+      if (commit) patchCache(client, (state) => commit(state, data, vars))
+    },
     onError(error, _vars, context) {
       if (context?.previous) client.setQueryData(KEY, context.previous)
       toastError(error)
-    },
-    onSettled() {
       void client.invalidateQueries({ queryKey: KEY })
     },
   })
@@ -51,6 +62,11 @@ function useOptimistic<TVars, TData>(options: {
 const replaceTask = (state: AppState, id: string, update: (task: Task) => Task): AppState => ({
   ...state,
   tasks: state.tasks.map((task) => (task.id === id ? update(task) : task)),
+})
+
+const replaceNote = (state: AppState, id: string, update: (note: Note) => Note): AppState => ({
+  ...state,
+  notes: state.notes.map((note) => (note.id === id ? update(note) : note)),
 })
 
 // --- Tareas ---------------------------------------------------------------
@@ -63,7 +79,9 @@ export function useCreateTask() {
     onSuccess(task) {
       patchCache(client, (state) => ({ ...state, tasks: [...state.tasks, task] }))
     },
-    onSettled() {
+    // Sin toast: el error de crear se muestra inline en el modal, que es donde esta
+    // mirando el usuario. Aca solo resincronizamos por las dudas.
+    onError() {
       void client.invalidateQueries({ queryKey: KEY })
     },
   })
@@ -81,8 +99,21 @@ export function useUpdateTask() {
           next.hiddenInToday = false
           next.todayPosition = null
         }
+        // Completar ahora no vence hasta que cierre la semana; reabrir limpia expired.
+        if (next.status === 'hecha') {
+          if (task.status !== 'hecha') {
+            next.completedAt = task.completedAt ?? new Date().toISOString()
+            next.expired = false
+          }
+        } else {
+          next.completedAt = null
+          next.expired = false
+        }
         return next
       }),
+    // El PATCH devuelve la tarea completa y ya resuelta (todayPosition, completedAt):
+    // pisamos el parche optimista con ella en vez de releer todo el estado.
+    commit: (state, task) => replaceTask(state, task.id, () => task),
   })
 }
 
@@ -126,8 +157,6 @@ export function useCreateSubtask() {
     },
     onError(error) {
       toastError(error)
-    },
-    onSettled() {
       void client.invalidateQueries({ queryKey: KEY })
     },
   })
@@ -144,6 +173,11 @@ export function useUpdateSubtask() {
         subtasks: task.subtasks.map((s) => (s.id === id ? { ...s, ...patch } : s)),
       })),
     }),
+    commit: (state, subtask) =>
+      replaceTask(state, subtask.taskId, (task) => ({
+        ...task,
+        subtasks: task.subtasks.map((s) => (s.id === subtask.id ? subtask : s)),
+      })),
   })
 }
 
@@ -174,8 +208,6 @@ export function useCreateLink() {
     },
     onError(error) {
       toastError(error)
-    },
-    onSettled() {
       void client.invalidateQueries({ queryKey: KEY })
     },
   })
@@ -203,7 +235,7 @@ export function useCreateCategory() {
     onSuccess(category) {
       patchCache(client, (state) => ({ ...state, categories: [...state.categories, category] }))
     },
-    onSettled() {
+    onError() {
       void client.invalidateQueries({ queryKey: KEY })
     },
   })
@@ -216,6 +248,10 @@ export function useUpdateCategory() {
     optimistic: (state, { id, patch }) => ({
       ...state,
       categories: state.categories.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    }),
+    commit: (state, category) => ({
+      ...state,
+      categories: state.categories.map((c) => (c.id === category.id ? category : c)),
     }),
   })
 }
@@ -243,8 +279,6 @@ export function useCreateQuickTask() {
     },
     onError(error) {
       toastError(error)
-    },
-    onSettled() {
       void client.invalidateQueries({ queryKey: KEY })
     },
   })
@@ -257,6 +291,10 @@ export function useUpdateQuickTask() {
     optimistic: (state, { id, patch }) => ({
       ...state,
       quickTasks: state.quickTasks.map((q) => (q.id === id ? { ...q, ...patch } : q)),
+    }),
+    commit: (state, quickTask) => ({
+      ...state,
+      quickTasks: state.quickTasks.map((q) => (q.id === quickTask.id ? quickTask : q)),
     }),
   })
 }
@@ -271,22 +309,17 @@ export function useDeleteQuickTask() {
   })
 }
 
-const replaceNote = (state: AppState, id: string, update: (note: Note) => Note): AppState => ({
-  ...state,
-  notes: state.notes.map((note) => (note.id === id ? update(note) : note)),
-})
-
 export function useCreateNote() {
   const client = useQueryClient()
   return useMutation({
     mutationFn: (input: NoteInput) => api.createNote(input),
     onSuccess(note) {
-      patchCache(client, (state) => ({ ...state, notes: [note, ...state.notes] }))
+      patchCache(client, (state) => ({
+        ...state,
+        notes: [note, ...state.notes.filter((item) => item.id !== note.id)],
+      }))
     },
-    onError(error) {
-      toastError(error)
-    },
-    onSettled() {
+    onError() {
       void client.invalidateQueries({ queryKey: KEY })
     },
   })
@@ -308,6 +341,7 @@ export function useUpdateNote() {
         }
         return next
       }),
+    commit: (state, note) => replaceNote(state, note.id, () => note),
   })
 }
 
@@ -325,5 +359,5 @@ export function useDeleteNote() {
  */
 export function useRefreshState() {
   const client = useQueryClient()
-  return () => client.invalidateQueries({ queryKey: KEY })
+  return useCallback(() => client.invalidateQueries({ queryKey: KEY }), [client])
 }

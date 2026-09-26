@@ -15,7 +15,7 @@
   max-height: min(88vh, 760px);
   display: flex;
   flex-direction: column;
-  border-radius: var(--r-lg);
+  border-radius: var(--r-xl);
   background: var(--surface);
   box-shadow: var(--shadow-lg);
   animation: rise var(--dur-slow) var(--ease-out);
@@ -93,5 +93,36 @@
     max-height: 100dvh;
     height: 100dvh;
     border-radius: 0;
+  }
+
+  .header {
+    padding: var(--space-4) var(--space-4) var(--space-3);
+  }
+
+  .title {
+    font-size: 19px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .close {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+  }
+
+  .body {
+    padding: 0 var(--space-4) var(--space-4);
+  }
+
+  .footer {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4) max(var(--space-4), env(safe-area-inset-bottom));
+  }
+
+  .footer > * {
+    max-width: 100%;
   }
 }

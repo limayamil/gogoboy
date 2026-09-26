@@ -1,31 +1,63 @@
 .page {
   max-width: 1440px;
   margin: 0 auto;
+  min-width: 0;
 }
 
 .header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
   margin-bottom: var(--space-5);
 }
 
 .title {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: 30px;
-}
-
-.title svg {
-  color: var(--accent-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: clamp(24px, 2.6vw, 32px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
 }
 
 .subtitle {
-  margin-top: 2px;
-  font-size: 14px;
+  margin-top: 4px;
+  font-size: 13px;
   color: var(--ink-faint);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.weekendToggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  min-width: 42px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--ink-soft);
+  box-shadow: var(--shadow-sm);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition:
+    background var(--dur-fast) ease,
+    color var(--dur-fast) ease;
+}
+
+.weekendToggle:hover,
+.weekendToggleActive {
+  background: var(--accent-2);
+  color: #fff;
 }
 
 .nav {
@@ -34,7 +66,7 @@
   gap: var(--space-2);
   padding: 5px;
   border-radius: var(--r-pill);
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
   box-shadow: var(--shadow-sm);
 }
 
@@ -75,9 +107,10 @@
   max-width: 900px;
   margin: 0 auto var(--space-5);
   padding: var(--space-3) var(--space-5);
-  border-radius: var(--r-lg);
-  background: color-mix(in srgb, var(--surface) 78%, transparent);
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--r-xl);
+  background-color: color-mix(in srgb, var(--surface) 86%, transparent);
+  background-image: var(--grad-wash);
+  box-shadow: var(--shadow-card);
   animation: fade-rise var(--dur-slow) var(--ease-out) both;
 }
 
@@ -104,19 +137,24 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--space-3);
   align-items: start;
 }
 
+.gridWithWeekend {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
 .day {
   min-height: 340px;
-  padding: var(--space-3);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
+  padding: var(--space-4) var(--space-3);
+  border-radius: var(--r-lg);
+  background-color: var(--surface);
+  background-image: var(--grad-wash);
+  box-shadow: var(--shadow-card);
   border: 2px dashed transparent;
-  transition: border-color 150ms ease, background 150ms ease;
+  transition: border-color 150ms ease, background-color 150ms ease;
 }
 
 .dayOver {
@@ -125,7 +163,8 @@
 }
 
 .dayToday {
-  box-shadow: var(--shadow-md), inset 0 3px 0 0 var(--accent);
+  background-color: color-mix(in srgb, var(--accent-soft) 70%, var(--surface));
+  box-shadow: var(--shadow-md);
 }
 
 .dayHeader {
@@ -156,9 +195,9 @@
 }
 
 .card {
-  padding: 9px 11px;
-  border-radius: var(--r-sm);
-  border-left: 4px solid transparent;
+  padding: 11px 13px;
+  border-radius: var(--r-md);
+  background-image: var(--grad-wash);
   cursor: grab;
   transition: transform 140ms ease, box-shadow 140ms ease;
 }
@@ -194,11 +233,13 @@
 
 .cardCategory {
   display: inline-block;
-  margin: 7px 0 0 26px;
-  padding: 2px 8px;
+  max-width: calc(100% - 26px);
+  margin: 8px 0 0 26px;
+  padding: 3px 9px;
   border-radius: var(--r-pill);
   font-size: 11px;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .dragging {
@@ -207,7 +248,7 @@
 
 .ghost {
   padding: 10px 16px;
-  border-radius: var(--r-sm);
+  border-radius: var(--r-md);
   background: var(--surface);
   box-shadow: var(--shadow-lg);
   font-size: 13.5px;
@@ -229,16 +270,56 @@
 @media (max-width: 720px) {
   .header {
     flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .headerActions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+  }
+
+  .weekendLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .nav {
+    margin-left: 0;
+    flex-shrink: 0;
+  }
+
+  .navToday {
+    padding: 6px 10px;
   }
 
   .grid {
     display: grid;
+    width: 100%;
+    min-width: 0;
     grid-auto-flow: column;
-    grid-auto-columns: minmax(220px, 80vw);
+    /* Peek del dia siguiente, sin cortar una palabra a la mitad. */
+    grid-auto-columns: calc(100% - 28px);
     grid-template-columns: none;
     overflow-x: auto;
+    overscroll-behavior-x: contain;
     scroll-snap-type: x mandatory;
+    scroll-padding-inline: 0;
     padding-bottom: var(--space-3);
+    padding-right: 2px;
     -webkit-overflow-scrolling: touch;
   }
 

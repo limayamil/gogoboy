@@ -1,3 +1,4 @@
+import { isExpiredCompleted } from '../../src/shared/expiry.ts'
 import type { AppState, Task } from '../../src/shared/types.ts'
 
 export interface McpClock {
@@ -95,8 +96,11 @@ export function callTool(
 }
 
 function projectHoy(app: AppState, today: string) {
+  // Mediodia UTC cae en el mismo dia calendario de Argentina: el vencimiento
+  // usa el "hoy" del reloj del MCP, no el UTC del host.
+  const now = new Date(`${today}T12:00:00Z`)
   const tasks = app.tasks
-    .filter((item) => item.inToday && !item.hiddenInToday)
+    .filter((item) => item.inToday && !item.hiddenInToday && !isExpiredCompleted(item, now))
     .sort(byTodayOrder)
     .map((item) => summarizeTask(item, app))
   const quickTasks = app.quickTasks

@@ -24,9 +24,6 @@ export function NotesView() {
   const visible = useMemo(() => filterNotes(notes, query, filter), [notes, query, filter])
   const hasPasswords = notes.some(isPasswordNote)
 
-  if (isPending) return <LoadingState />
-  if (error) return <ErrorState error={error} />
-
   const emptyPasswords = passwordsOn && !hasPasswords
   const emptyNotes = !passwordsOn && !tagId && notes.length === 0
   const emptyFilter = !emptyPasswords && !emptyNotes && visible.length === 0
@@ -58,6 +55,11 @@ export function NotesView() {
         </div>
       </header>
 
+      {isPending ? <LoadingState /> : null}
+      {error ? <ErrorState error={error} /> : null}
+
+      {!isPending && !error ? (
+        <>
       <div className={styles.toolbar}>
         <label className={styles.search}>
           <IconSearch size={16} />
@@ -137,6 +139,8 @@ export function NotesView() {
           ))}
         </ul>
       )}
+        </>
+      ) : null}
     </div>
   )
 }

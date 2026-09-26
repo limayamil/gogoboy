@@ -1,4 +1,4 @@
-import { loadTask, sql } from '../_lib/db.ts'
+import { loadTask, loadTaskChildren, loadTaskRow, mapTask, sql } from '../_lib/db.ts'
 import { body, notFound, requireId, route } from '../_lib/http.ts'
 import { parseTaskPatch } from '../_lib/validate.ts'
 
@@ -16,13 +16,19 @@ export default route({
    * Es una query extra frente a armar el UPDATE dinamicamente, pero evita
    * concatenar nombres de columnas en SQL y hace trivial distinguir
    * "no mandaron el campo" de "lo mandaron en null".
+   *
+   * Esa query extra es UNA sola: alcanza con la fila de `tasks`, porque el UPDATE no
+   * toca subtareas, adjuntos ni links. Los hijos se traen solo para armar la respuesta,
+   * en paralelo con el propio UPDATE.
    */
   async PATCH(req, res) {
     const id = requireId(req)
     const patch = parseTaskPatch(body(req))
 
-    const current = await loadTask(id)
-    if (!current) notFound('Tarea no encontrada')
+    const row = await loadTaskRow(id)
+    if (!row) notFound('Tarea no encontrada')
+
+    const current = mapTask(row)
 
     const merged = { ...current, ...patch }
 
@@ -44,8 +50,20 @@ export default route({
       merged.status === 'hecha'
         ? (current.completedAt ?? new Date().toISOString())
         : null
+    // Completar esta semana la deja visible; reabrirla limpia el vencimiento.
+    // Si ya estaba hecha, no tocamos `expired`: el lazy del GET se encarga.
+    const expired =
+      merged.status === 'hecha'
+        ? current.status === 'hecha'
+          ? current.expired
+          : false
+        : false
 
-    await sql`
+    // Los hijos no cambian con este UPDATE, asi que la lectura arranca ya mismo y
+    // corre solapada con la escritura en vez de esperarla.
+    const children = loadTaskChildren(id)
+
+    const [updated] = (await sql`
       update tasks set
         category_id     = ${merged.categoryId},
         title           = ${merged.title},
@@ -59,11 +77,14 @@ export default route({
         today_position  = ${merged.todayPosition},
         position        = ${merged.position},
         completed_at    = ${completedAt},
+        expired         = ${expired},
         updated_at      = now()
       where id = ${id}
-    `
+      returning *
+    `) as Row[]
 
-    res.status(200).json(await loadTask(id))
+    const [subtasks, attachments, links] = await children
+    res.status(200).json(mapTask(updated, subtasks, attachments, links))
   },
 
   async DELETE(req, res) {

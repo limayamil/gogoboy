@@ -56,6 +56,7 @@
 .secretInput {
   flex: 1;
   min-width: 0;
+  width: auto;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   letter-spacing: 0.02em;
 }
@@ -69,7 +70,9 @@
   border: 1.5px solid var(--line);
   background: var(--surface-2);
   color: var(--ink-soft);
-  transition: border-color var(--dur-fast) ease, color var(--dur-fast) ease,
+  transition:
+    border-color var(--dur-fast) ease,
+    color var(--dur-fast) ease,
     background var(--dur-fast) ease;
 }
 
@@ -86,7 +89,7 @@
 .copied {
   font-size: 12px;
   font-weight: 700;
-  color: var(--accent-2);
+  color: var(--accent-3);
 }
 
 .copyError {

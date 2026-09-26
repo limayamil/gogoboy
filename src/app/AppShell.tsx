@@ -5,6 +5,7 @@ import { IconCalendar, IconGrid, IconLogout, IconMoon, IconNote, IconSun } from 
 import { authClient } from '../lib/auth'
 import { ModalProvider } from './modals'
 import { ToastHost } from './ToastHost'
+import { UpdateBanner } from './UpdateBanner'
 import { useThemeMode } from './theme'
 import { useSky } from './useSky'
 import styles from './AppShell.module.css'
@@ -77,6 +78,7 @@ export function AppShell() {
       >
         <div className={styles.sky} aria-hidden="true">
           <span className={styles.skyGlow} />
+          <span className={styles.skyPattern} />
           {raining ? (
             <span className={styles.skyRain}>
               {RAIN_DROPS.map((drop, index) => (
@@ -96,12 +98,12 @@ export function AppShell() {
           ) : null}
         </div>
 
-        <div className={styles.brand}>
+        <NavLink to="/" end className={styles.brand} aria-label="Ir a Hoy">
           <span className={styles.logo} aria-hidden="true">
             <img src="/brand/logo-mark.webp" alt="" width="34" height="34" />
           </span>
           <span className={styles.brandName}>GoGoBoy</span>
-        </div>
+        </NavLink>
 
         <nav className={styles.tabs} aria-label="Vistas">
           {TABS.map(({ to, label, Icon }) => (
@@ -111,7 +113,7 @@ export function AppShell() {
               end={to === '/'}
               className={({ isActive }) => `${styles.tab} ${isActive ? styles.tabActive : ''}`}
             >
-              <Icon size={18} />
+              <Icon size={20} />
               <span>{label}</span>
             </NavLink>
           ))}
@@ -124,7 +126,7 @@ export function AppShell() {
             onClick={() => authClient.signOut()}
             aria-label="Cerrar sesión"
           >
-            <IconLogout size={18} />
+            <IconLogout size={20} />
           </button>
           <button
             type="button"
@@ -132,7 +134,7 @@ export function AppShell() {
             onClick={toggle}
             aria-label={mode === 'light' ? 'Activar modo oscuro' : 'Activar modo claro'}
           >
-            {mode === 'light' ? <IconMoon size={18} /> : <IconSun size={18} />}
+            {mode === 'light' ? <IconMoon size={20} /> : <IconSun size={20} />}
           </button>
         </div>
       </header>
@@ -144,6 +146,7 @@ export function AppShell() {
 
         <Fabs />
         <ToastHost />
+        <UpdateBanner />
       </ModalProvider>
     </div>
   )

@@ -1,8 +1,19 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
-import { TaskModal, type TaskModalRequest } from '../components/TaskModal'
+import { Suspense, createContext, lazy, useContext, useMemo, useState, type ReactNode } from 'react'
+import type { TaskModalRequest } from '../components/TaskModal'
 import { CategoryModal } from '../components/CategoryModal'
-import { NoteModal } from '../components/NoteModal'
 import type { NoteKind } from '../shared/types'
+
+/**
+ * El detalle de tarea y el de nota son los componentes mas grandes y no se ven
+ * hasta que se abre el modal: van en su propio chunk para que no pesen en la carga inicial.
+ */
+const TaskModal = lazy(() =>
+  import('../components/TaskModal').then((m) => ({ default: m.TaskModal })),
+)
+
+const NoteModal = lazy(() =>
+  import('../components/NoteModal').then((m) => ({ default: m.NoteModal })),
+)
 
 /**
  * Host unico de modales. Cualquier vista puede abrir el detalle de una tarea, una
@@ -42,13 +53,17 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     <Context.Provider value={api}>
       {children}
       {taskRequest ? (
-        // La key remonta el formulario al cambiar de tarea, para que no arrastre el
-        // estado local del modal anterior.
-        <TaskModal
-          key={taskRequest.taskId ?? 'nueva'}
-          request={taskRequest}
-          onClose={() => setTaskRequest(null)}
-        />
+        // Sin fallback: el chunk llega en milisegundos y un spinner de paso a paso
+        // parpadearia mas de lo que informa.
+        <Suspense fallback={null}>
+          {/* La key remonta el formulario al cambiar de tarea, para que no arrastre el
+              estado local del modal anterior. */}
+          <TaskModal
+            key={taskRequest.taskId ?? 'nueva'}
+            request={taskRequest}
+            onClose={() => setTaskRequest(null)}
+          />
+        </Suspense>
       ) : null}
       {categoryRequest ? (
         <CategoryModal
@@ -58,12 +73,14 @@ export function ModalProvider({ children }: { children: ReactNode }) {
         />
       ) : null}
       {noteRequest ? (
-        <NoteModal
-          key={noteRequest.id ?? `nueva-${noteRequest.kind}`}
-          noteId={noteRequest.id}
-          composeKind={noteRequest.kind}
-          onClose={() => setNoteRequest(undefined)}
-        />
+        <Suspense fallback={null}>
+          <NoteModal
+            key={noteRequest.id ?? `nueva-${noteRequest.kind}`}
+            noteId={noteRequest.id}
+            composeKind={noteRequest.kind}
+            onClose={() => setNoteRequest(undefined)}
+          />
+        </Suspense>
       ) : null}
     </Context.Provider>
   )

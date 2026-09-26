@@ -80,6 +80,11 @@ export interface Task {
   status: Status
   inToday: boolean
   hiddenInToday: boolean
+  /**
+   * Hecha cuya semana (lunes–domingo) ya termino. Distinto de `hiddenInToday`:
+   * no es el ojito, es para que las completadas no se acumulen en Hoy/Categorias.
+   */
+  expired: boolean
   todayPosition: number | null
   position: number
   createdAt: string
@@ -106,6 +111,9 @@ export interface AppState {
   quickTasks: QuickTask[]
   /** false = faltan las S3_*; el modal esconde los adjuntos en vez de fallar al subir. */
   storageConfigured: boolean
+  /** Firma de estos datos. El front la compara contra GET /api/version para avisar
+   *  que hay novedades cargadas desde otro dispositivo o desde el MCP. */
+  version: string
 }
 
 export interface CategoryInput {

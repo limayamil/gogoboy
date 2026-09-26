@@ -146,6 +146,7 @@ export function mapTask(
     status: row.status as Task['status'],
     inToday: Boolean(row.in_today),
     hiddenInToday: Boolean(row.hidden_in_today),
+    expired: Boolean(row.expired),
     todayPosition: row.today_position == null ? null : Number(row.today_position),
     position: Number(row.position),
     createdAt: toIso(row.created_at),
@@ -157,25 +158,34 @@ export function mapTask(
   }
 }
 
+/** La fila cruda de `tasks`, sin hijos. Un solo viaje, para quien no necesita mas. */
+export async function loadTaskRow(id: string): Promise<Row | null> {
+  const [task] = (await sql`select * from tasks where id = ${id}`) as Row[]
+  return task ?? null
+}
+
+/**
+ * Subtareas, adjuntos y links de una tarea. Son independientes entre si, asi que van
+ * en paralelo: el driver HTTP de Neon manda una sentencia por request, y encadenar los
+ * `await` seria pagar tres latencias en fila en vez de una.
+ */
+export async function loadTaskChildren(
+  id: string,
+): Promise<[Subtask[], Attachment[], TaskLink[]]> {
+  const [subtasks, attachments, links] = (await Promise.all([
+    sql`select * from subtasks where task_id = ${id} order by position, title`,
+    sql`select * from attachments where task_id = ${id} order by created_at`,
+    sql`select * from task_links where task_id = ${id} order by position, created_at`,
+  ])) as Row[][]
+  return [subtasks.map(mapSubtask), attachments.map(mapAttachment), links.map(mapTaskLink)]
+}
+
 /** Trae una tarea completa (subtareas, adjuntos y links) ya mapeada, o null si no existe. */
 export async function loadTask(id: string): Promise<Task | null> {
-  const [task] = (await sql`select * from tasks where id = ${id}`) as Row[]
+  const task = await loadTaskRow(id)
   if (!task) return null
-  const subtasks = (await sql`
-    select * from subtasks where task_id = ${id} order by position, title
-  `) as Row[]
-  const attachments = (await sql`
-    select * from attachments where task_id = ${id} order by created_at
-  `) as Row[]
-  const links = (await sql`
-    select * from task_links where task_id = ${id} order by position, created_at
-  `) as Row[]
-  return mapTask(
-    task,
-    subtasks.map(mapSubtask),
-    attachments.map(mapAttachment),
-    links.map(mapTaskLink),
-  )
+  const [subtasks, attachments, links] = await loadTaskChildren(id)
+  return mapTask(task, subtasks, attachments, links)
 }
 
 /** Trae una nota completa (etiquetas y adjuntos) ya mapeada, o null si no existe. */

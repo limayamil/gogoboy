@@ -8,6 +8,7 @@ const emptyState = (): AppState => ({
   notes: [],
   quickTasks: [],
   storageConfigured: false,
+  version: '',
 })
 
 const clock = { today: '2026-09-15', week: ['2026-09-14', '2026-09-15'] }

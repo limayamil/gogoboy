@@ -19,13 +19,30 @@ body,
 body {
   font-family: var(--font-sans);
   color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+/* Los tintes del fondo van en una capa fija propia y no en `background-attachment:
+   fixed` del body: asi el navegador no repinta los gradientes grandes en cada
+   frame de scroll. Se ve igual. En claro van a media tinta para no pelear con
+   las tarjetas; en oscuro se dejan enteros, que ya son suaves. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.38;
   background:
     radial-gradient(1100px 600px at 8% -8%, var(--bg-tint-a), transparent 62%),
     radial-gradient(1000px 620px at 96% 4%, var(--bg-tint-b), transparent 58%),
-    var(--bg);
-  background-attachment: fixed;
-  -webkit-font-smoothing: antialiased;
-  line-height: 1.45;
+    radial-gradient(820px 480px at 70% 110%, var(--bg-tint-c), transparent 64%);
+}
+
+:root[data-theme='dark'] body::before {
+  opacity: 1;
 }
 
 button,
@@ -54,9 +71,21 @@ h1,
 h2,
 h3,
 h4 {
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 :focus-visible {

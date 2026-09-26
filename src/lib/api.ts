@@ -45,6 +45,7 @@ export interface LinkDraft {
 
 export const api = {
   getState: () => request<AppState>('/state'),
+  getVersion: () => request<{ version: string }>('/version'),
 
   createCategory: (input: { name: string; colorKey: string }) =>
     request<Category>('/categories', { method: 'POST', body: json(input) }),

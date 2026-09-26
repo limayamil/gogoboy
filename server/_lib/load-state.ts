@@ -10,7 +10,9 @@ import {
   mapTaskLink,
   sql,
 } from './db.ts'
-import { storageConfigured } from './storage.ts'
+import { expireCompletedTasks } from './expiry.ts'
+import { storageConfigured } from './storage-config.ts'
+import { stateVersion } from './version.ts'
 
 type Row = Record<string, unknown>
 
@@ -19,6 +21,26 @@ type Row = Record<string, unknown>
  * de tareas/notas (y para que un cambio de mapeo se vea en los dos lados).
  */
 export async function loadAppState(): Promise<AppState> {
+  // Lazy: al abrir la app (o el MCP) vencen las hechas de semanas ya cerradas. Sin cron.
+  // Tiene que terminar antes del select, si no el estado saldria con expired en false.
+  await expireCompletedTasks()
+
+  // `stateVersion` corre en paralelo: el front se lleva la firma que corresponde a
+  // estos datos y puede compararla mas tarde sin un round-trip extra.
+  const [tables, version] = await Promise.all([
+    Promise.all([
+      sql`select * from categories order by position, created_at`,
+      sql`select * from tasks order by position, created_at`,
+      sql`select * from subtasks order by position, title`,
+      sql`select * from attachments order by created_at`,
+      sql`select * from task_links order by position, created_at`,
+      sql`select * from quick_tasks order by position, created_at`,
+      sql`select * from notes order by updated_at desc, created_at desc`,
+      sql`select * from note_tags order by name`,
+      sql`select * from note_tag_assignments`,
+    ]) as Promise<Row[][]>,
+    stateVersion(),
+  ])
   const [
     categories,
     tasks,
@@ -29,17 +51,7 @@ export async function loadAppState(): Promise<AppState> {
     notes,
     noteTags,
     noteTagAssignments,
-  ] = (await Promise.all([
-    sql`select * from categories order by position, created_at`,
-    sql`select * from tasks order by position, created_at`,
-    sql`select * from subtasks order by position, title`,
-    sql`select * from attachments order by created_at`,
-    sql`select * from task_links order by position, created_at`,
-    sql`select * from quick_tasks order by position, created_at`,
-    sql`select * from notes order by updated_at desc, created_at desc`,
-    sql`select * from note_tags order by name`,
-    sql`select * from note_tag_assignments`,
-  ])) as Row[][]
+  ] = tables
 
   const subtasksByTask = new Map<string, Subtask[]>()
   for (const row of subtasks) {
@@ -107,5 +119,6 @@ export async function loadAppState(): Promise<AppState> {
     ),
     quickTasks: quickTasks.map(mapQuickTask),
     storageConfigured,
+    version,
   }
 }

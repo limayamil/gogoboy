@@ -8,6 +8,7 @@ const state = (): AppState => ({
   notes: [],
   quickTasks: [],
   storageConfigured: false,
+  version: '',
 })
 
 const handler = createMcpHandler({

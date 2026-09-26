@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { IconClose } from './Icons'
 import styles from './Modal.module.css'
@@ -11,12 +11,28 @@ interface Props {
   onClose: () => void
   children: ReactNode
   footer?: ReactNode
+  /**
+   * Se consulta antes de cada cierre (Escape, click en el velo, la X). Si devuelve
+   * false el modal se queda abierto: es como TaskModal pregunta por los cambios sin
+   * guardar sin tener que interceptar las tres salidas por separado.
+   */
+  canClose?: () => boolean
+  /** false cuando el contenido ya enfoca algo propio y no queremos pisarselo. */
+  autoFocus?: boolean
 }
 
-export function Modal({ title, onClose, children, footer }: Props) {
+export function Modal({ title, onClose, children, footer, canClose, autoFocus = true }: Props) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
+
+  // Por ref para que el efecto del focus trap no se reenganche en cada render.
+  const guard = useRef(canClose)
+  guard.current = canClose
+  const requestClose = useCallback(() => {
+    if (guard.current && !guard.current()) return
+    onClose()
+  }, [onClose])
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -26,13 +42,15 @@ export function Modal({ title, onClose, children, footer }: Props) {
     document.body.style.overflow = 'hidden'
     const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
 
-    const titleEl = dialog.querySelector<HTMLElement>('h2')
-    titleEl?.setAttribute('tabindex', '-1')
-    titleEl?.focus()
+    if (autoFocus) {
+      const titleEl = dialog.querySelector<HTMLElement>('h2')
+      titleEl?.setAttribute('tabindex', '-1')
+      titleEl?.focus()
+    }
 
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        onClose()
+        requestClose()
         return
       }
       if (event.key !== 'Tab') return
@@ -61,14 +79,14 @@ export function Modal({ title, onClose, children, footer }: Props) {
       document.body.style.overflow = previousOverflow
       previouslyFocused?.focus()
     }
-  }, [onClose])
+  }, [autoFocus, requestClose])
 
   return createPortal(
     <div
       ref={overlayRef}
       className={styles.overlay}
       onMouseDown={(event) => {
-        if (event.target === overlayRef.current) onClose()
+        if (event.target === overlayRef.current) requestClose()
       }}
     >
       <div
@@ -83,7 +101,7 @@ export function Modal({ title, onClose, children, footer }: Props) {
           <h2 id={titleId} className={styles.title}>
             {title}
           </h2>
-          <button type="button" className={styles.close} onClick={onClose} aria-label="Cerrar">
+          <button type="button" className={styles.close} onClick={requestClose} aria-label="Cerrar">
             <IconClose size={18} />
           </button>
         </header>

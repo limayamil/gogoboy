@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Modal } from './Modal'
 import { RichTextEditor } from './RichTextEditor'
 import {
@@ -18,7 +19,7 @@ import { addDays, formatShortDate, toDateKey, todayKey } from '../lib/dates'
 import { compressImage } from '../lib/image'
 import { useColorOf } from '../lib/palette'
 import { celebrateFromPointer, shouldCelebrateChecked, shouldCelebrateStatus } from '../lib/confetti'
-import { errorMessage, toastError } from '../lib/toast'
+import { errorMessage, toastError, toastUndo } from '../lib/toast'
 import { isEmptyRichText, serializeRichText } from '../lib/rich-text'
 import {
   useAppState,
@@ -32,7 +33,7 @@ import {
   useUpdateSubtask,
   useUpdateTask,
 } from '../lib/store'
-import { STATUSES, URGENCIES, type Status, type TaskLink, type Urgency } from '../shared/types'
+import { STATUSES, URGENCIES, type Status, type Subtask, type TaskLink, type Urgency } from '../shared/types'
 import styles from './TaskModal.module.css'
 
 export interface TaskModalRequest {
@@ -163,6 +164,11 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
     inToday: task?.inToday ?? request.defaults?.inToday ?? false,
   }))
 
+  // Snapshot del formulario tal como se abrio. Solo cubre los campos que esperan al
+  // boton Guardar: subtareas, links y adjuntos ya se persisten solos en modo edicion.
+  const pristine = useRef<typeof form | null>(null)
+  if (pristine.current === null) pristine.current = form
+
   const [draftSubtasks, setDraftSubtasks] = useState<string[]>([])
   const [draftFiles, setDraftFiles] = useState<DraftFile[]>([])
   const [draftLinks, setDraftLinks] = useState<DraftLink[]>([])
@@ -178,6 +184,8 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
   const fileInput = useRef<HTMLInputElement>(null)
   const dragDepth = useRef(0)
   const linkInput = useRef<HTMLInputElement>(null)
+  const titleRef = useRef<HTMLInputElement>(null)
+  const errorId = useId()
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -267,10 +275,17 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
     async (taskId: string, drafts: DraftFile[]): Promise<string[]> => {
       setUploading(true)
       const failures: string[] = []
-      for (const draft of drafts) {
-        const failure = await uploadOne(taskId, draft)
-        if (failure) failures.push(`“${draft.file.name}” (${failure})`)
+      // De a tres en paralelo. En serie, cada archivo esperaba sus tres requests
+      // (firmar, subir, registrar) antes de que arrancara el siguiente; sin tope, una
+      // tanda grande satura la conexion y los porcentajes dejan de avanzar parejo.
+      const queue = [...drafts]
+      const worker = async () => {
+        for (let draft = queue.shift(); draft; draft = queue.shift()) {
+          const failure = await uploadOne(taskId, draft)
+          if (failure) failures.push(`“${draft.file.name}” (${failure})`)
+        }
       }
+      await Promise.all(Array.from({ length: Math.min(3, queue.length) }, worker))
       await refreshRef.current()
       setDraftFiles((prev) => {
         for (const d of prev) {
@@ -413,10 +428,48 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
     setSubtaskDraft('')
   }
 
+  /**
+   * Subtareas y links se borran de un click, sin confirmar. En vez de frenar con un
+   * dialogo, se borra y el toast ofrece el Deshacer: vuelve con id nuevo, que para
+   * estos dos casos es indistinguible.
+   */
+  function removeSubtask(subtask: Subtask) {
+    deleteSubtask.mutate(subtask.id)
+    toastUndo(`Se eliminó “${subtask.title}”`, () => {
+      createSubtask.mutate(
+        { taskId: subtask.taskId, title: subtask.title },
+        {
+          onSuccess: (restored) => {
+            if (subtask.done) updateSubtask.mutate({ id: restored.id, patch: { done: true } })
+          },
+        },
+      )
+    })
+  }
+
+  function removeLink(link: TaskLink) {
+    deleteLink.mutate(link.id)
+    toastUndo('Se eliminó el link', () => {
+      createLink.mutate({ taskId: link.taskId, url: link.url, title: link.title })
+    })
+  }
+
+  const isDirty = () => {
+    if (JSON.stringify(form) !== JSON.stringify(pristine.current)) return true
+    return !isEdit && draftSubtasks.length + draftLinks.length + draftFiles.length > 0
+  }
+
+  /** Lo consulta `Modal` antes de cerrar por Escape, velo o la X. */
+  function canClose() {
+    if (!isDirty()) return true
+    return window.confirm('Tenés cambios sin guardar. ¿Querés cerrar y descartarlos?')
+  }
+
   async function handleSave() {
     const title = form.title.trim()
     if (!title) {
       setError('La tarea necesita un título')
+      titleRef.current?.focus()
       return
     }
 
@@ -433,7 +486,10 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
 
     try {
       if (task) {
-        await updateTask.mutateAsync({ id: task.id, patch: payload })
+        // La mutacion es optimista: el cache ya quedo parcheado en `onMutate`, asi que
+        // esperar la respuesta solo dejaria el modal congelado. Si falla, el rollback
+        // de useOptimistic revierte y avisa por toast.
+        updateTask.mutate({ id: task.id, patch: payload })
         onClose()
         return
       }
@@ -509,6 +565,9 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
     <Modal
       title={isEdit ? 'Detalle de tarea' : 'Nueva tarea'}
       onClose={onClose}
+      canClose={canClose}
+      // El input de titulo ya tiene autoFocus; que Modal no le robe el foco al h2.
+      autoFocus={false}
       footer={
         <>
           {task ? (
@@ -523,7 +582,13 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
             </span>
           )}
           <span className={styles.spacer} />
-          <button type="button" className={styles.ghost} onClick={onClose}>
+          <button
+            type="button"
+            className={styles.ghost}
+            onClick={() => {
+              if (canClose()) onClose()
+            }}
+          >
             Cancelar
           </button>
           <button type="button" className={styles.primary} onClick={handleSave} disabled={busy}>
@@ -557,15 +622,22 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
           </div>
         ) : null}
 
-        {error ? <p className={styles.error}>{error}</p> : null}
+        {error ? (
+          <p id={errorId} className={styles.error} role="alert">
+            {error}
+          </p>
+        ) : null}
 
         <input
+          ref={titleRef}
           className={styles.titleInput}
           value={form.title}
           autoFocus
           maxLength={200}
           placeholder="¿Qué hay que hacer?"
           aria-label="Nombre de la tarea"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
           onChange={(e) => set('title', e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') void handleSave()
@@ -794,7 +866,7 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
                     <button
                       type="button"
                       className={styles.iconButton}
-                      onClick={() => deleteSubtask.mutate(subtask.id)}
+                      onClick={() => removeSubtask(subtask)}
                       aria-label={`Eliminar subtarea ${subtask.title}`}
                     >
                       <IconTrash size={15} />
@@ -865,7 +937,12 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
                   {draftFiles.map((draft) => (
                     <div key={draft.key} className={styles.tile}>
                       {draft.preview ? (
-                        <img className={styles.photo} src={draft.preview} alt={draft.file.name} />
+                        <img
+                          className={styles.photo}
+                          src={draft.preview}
+                          alt={draft.file.name}
+                          decoding="async"
+                        />
                       ) : (
                         <>
                           <span className={styles.tileDoc}>
@@ -917,7 +994,7 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
                     <LinkRow
                       key={link.id}
                       link={link}
-                      onRemove={() => deleteLink.mutate(link.id)}
+                      onRemove={() => removeLink(link)}
                       saved
                     />
                   ))}
@@ -1042,29 +1119,24 @@ function SavedTile({
   onOpen: () => void
   onDelete: () => void
 }) {
-  const [url, setUrl] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!isImage(contentType)) return
-    let alive = true
-    void api
-      .getAttachmentUrl(id)
-      .then(({ url: signed }) => {
-        if (alive) setUrl(signed)
-      })
-      .catch(() => {
-        // Sin miniatura se ve el icono generico; no vale un cartel de error por esto.
-      })
-    return () => {
-      alive = false
-    }
-  }, [id, contentType])
+  // La URL firmada dura una hora (expiresIn en server/_lib/storage.ts), asi que se cachea
+  // un poco menos que eso: abrir la misma tarea varias veces deja de re-firmar.
+  const { data } = useQuery({
+    queryKey: ['attachment-url', id],
+    queryFn: () => api.getAttachmentUrl(id),
+    enabled: isImage(contentType),
+    staleTime: 50 * 60_000,
+    gcTime: 55 * 60_000,
+    // Sin miniatura se ve el icono generico; no vale un cartel de error por esto.
+    retry: false,
+  })
+  const url = data?.url ?? null
 
   return (
     <div className={styles.tile}>
       <button type="button" className={styles.tileOpen} onClick={onOpen} title={fileName}>
         {url ? (
-          <img className={styles.photo} src={url} alt={fileName} />
+          <img className={styles.photo} src={url} alt={fileName} loading="lazy" decoding="async" />
         ) : (
           <>
             <span className={styles.tileDoc}>

@@ -14,6 +14,7 @@ describe('handleApi', () => {
     expect((await call('/api/notes')).status).toBe(204)
     expect((await call(`/api/notes/${UUID}`)).status).toBe(204)
     expect((await call('/api/mcp')).status).toBe(204)
+    expect((await call('/api/version')).status).toBe(204)
   })
 
   it('responde 404 JSON cuando la ruta no existe', async () => {

@@ -1,0 +1,71 @@
+.banner {
+  position: fixed;
+  /* Abajo al centro: el toast ocupa abajo a la izquierda y los FABs abajo a la
+     derecha, y arriba tapaba los botones de encabezado de las vistas. El main ya
+     reserva ~140px de padding inferior, asi que aca no cubre contenido. */
+  bottom: max(var(--space-5), env(safe-area-inset-bottom));
+  left: 50%;
+  translate: -50% 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 8px 8px 16px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: var(--shadow-lg);
+  animation: banner-slide var(--dur) var(--ease-out) both;
+}
+
+@keyframes banner-slide {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+.text {
+  white-space: nowrap;
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: var(--surface);
+  font-weight: 800;
+  font-size: 13px;
+  transition: opacity var(--dur-fast) ease;
+}
+
+.action:hover {
+  opacity: 0.86;
+}
+
+.dismiss {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-pill);
+  color: var(--ink-faint);
+  transition: color var(--dur-fast) ease, background var(--dur-fast) ease;
+}
+
+.dismiss:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+@media (max-width: 720px) {
+  .banner {
+    max-width: calc(100vw - 2 * var(--space-3));
+  }
+}

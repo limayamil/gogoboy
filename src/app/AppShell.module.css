@@ -15,7 +15,9 @@
   top: 0;
   z-index: 20;
   overflow: hidden;
-  backdrop-filter: blur(14px);
+  /* Sin backdrop-filter: --sky-b es opaco en las doce franjas, asi que el blur
+     desenfocaba algo que el propio fondo tapaba, y a cambio obligaba al navegador
+     a mantener una capa y recomponerla en cada frame de scroll. */
   background: var(--sky-b);
   border-bottom: 1px solid color-mix(in srgb, var(--sky-c) 55%, var(--line));
 }
@@ -57,6 +59,68 @@
 
 .skyReady .skyGlow {
   transition: background 3.2s ease, left 3.2s ease, top 3.2s ease;
+}
+
+/* Trama blanca repetible: tres dibujos emparentados acompañan la luz del día
+   sin competir con el gradiente ni con los controles del navbar. */
+.skyPattern {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-repeat: repeat;
+  background-position: 0 50%;
+  opacity: 0.52;
+  filter: drop-shadow(0 1px 0 rgb(74 66 100 / 16%));
+}
+
+.header[data-period='manana'] .skyPattern,
+.header[data-period='mediodia'] .skyPattern {
+  background-image: url('/patterns/sky-stitch-day.svg');
+  background-size: 240px 96px;
+  /* El trazo es blanco: de dia hay que subirle contraste o se funde con el cielo. */
+  opacity: 0.92;
+  filter:
+    drop-shadow(0 0.5px 0 rgb(74 66 100 / 23%))
+    drop-shadow(0 1px 1.5px rgb(74 66 100 / 15%));
+}
+
+.header[data-period='amanecer'] .skyPattern,
+.header[data-period='atardecer'] .skyPattern {
+  background-image: url('/patterns/sky-stitch-transition.svg');
+  background-size: 240px 96px;
+}
+
+.header[data-period='madrugada'] .skyPattern,
+.header[data-period='noche'] .skyPattern {
+  background-image: url('/patterns/sky-stitch-night.svg');
+  background-size: 240px 96px;
+}
+
+.header[data-period='madrugada'] .skyPattern {
+  background-position: -42px -8px;
+}
+
+.header[data-period='amanecer'] .skyPattern {
+  background-position: -18px -4px;
+}
+
+.header[data-period='mediodia'] .skyPattern {
+  background-position: -76px -10px;
+}
+
+.header[data-period='atardecer'] .skyPattern {
+  background-position: -64px -5px;
+}
+
+.header[data-period='noche'] .skyPattern {
+  background-position: -104px -8px;
+}
+
+:global(:root[data-theme='dark']) .skyPattern,
+:global(:root[data-theme='dark']) .header[data-period='manana'] .skyPattern,
+:global(:root[data-theme='dark']) .header[data-period='mediodia'] .skyPattern {
+  opacity: 0.18;
+  filter: none;
 }
 
 .skyRain {
@@ -116,6 +180,10 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  width: fit-content;
+  border-radius: var(--r-xs);
+  color: inherit;
+  text-decoration: none;
 }
 
 .logo {
@@ -124,6 +192,9 @@
   width: 38px;
   height: 38px;
   animation: logo-sway 4.5s ease-in-out infinite;
+  /* La sombra va en el elemento que rota, no en el hijo: como hija de una animacion
+     infinita se re-rasterizaba en cada frame, para siempre. */
+  filter: drop-shadow(0 3px 6px rgb(58 51 64 / 12%));
 }
 
 .logo img {
@@ -131,49 +202,60 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 3px 6px rgb(58 51 64 / 12%));
 }
 
 .brandName {
-  font-weight: 800;
-  font-size: 19px;
-  letter-spacing: -0.02em;
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+  padding-top: 2px;
+  font-family: var(--font-brand);
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: -0.035em;
   text-shadow: 0 1px 10px color-mix(in srgb, var(--sky-b) 70%, transparent);
 }
 
-/* Tabs tipo pildora sobre una capsula, como en design/refe2.jpeg */
+/* Chrome icon-first: capsula blanca y pestaña activa lavanda, como en la
+   referencia wellness. El texto queda de apoyo, no de titulo. */
 .tabs {
   display: flex;
-  gap: var(--space-1);
+  gap: 4px;
   padding: 5px;
   border-radius: var(--r-pill);
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
   box-shadow: var(--shadow-sm);
 }
 
 .tab {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 16px;
+  gap: 6px;
+  padding: 8px 14px;
   border-radius: var(--r-pill);
-  color: var(--ink-soft);
+  color: var(--ink-faint);
   font-weight: 700;
-  font-size: 14px;
+  font-size: 12px;
+  letter-spacing: 0.01em;
   text-decoration: none;
   transition: background var(--dur) ease, color var(--dur) ease, transform var(--dur-fast) var(--ease-out);
 }
 
+.tab svg {
+  flex-shrink: 0;
+}
+
 .tab:hover {
-  background: var(--surface-2);
+  background: var(--accent-2-soft);
   color: var(--ink);
   transform: translateY(-1px);
 }
 
 .tabActive,
 .tabActive:hover {
-  background: var(--ink);
-  color: var(--surface);
+  background: var(--accent-2);
+  color: #fff;
   transform: none;
 }
 
@@ -187,13 +269,13 @@
 .themeButton {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   border-radius: var(--r-pill);
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
   color: var(--ink-soft);
   box-shadow: var(--shadow-sm);
-  transition: color var(--dur) ease, transform var(--dur) var(--ease-out);
+  transition: color var(--dur) ease, transform var(--dur) var(--ease-out), background var(--dur) ease;
 }
 
 .themeButton:hover {
@@ -207,10 +289,18 @@
 
 .main {
   flex: 1;
+  min-width: 0;
   padding: var(--space-5) var(--space-5) max(140px, calc(120px + env(safe-area-inset-bottom)));
 }
 
+/* Con cuatro pestañas el texto no entra en el centro del header antes que el
+   layout mobile: se esconden las labels y quedan los iconos. */
 @media (max-width: 1080px) {
+  .tab {
+    position: relative;
+    padding: 8px 12px;
+  }
+
   .tab span {
     position: absolute;
     width: 1px;
@@ -222,20 +312,34 @@
     white-space: nowrap;
     border: 0;
   }
-
-  .tab {
-    position: relative;
-    padding: 8px 12px;
-  }
 }
 
 @media (max-width: 720px) {
   .header {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--space-2);
     padding: 0 max(var(--space-3), env(safe-area-inset-right)) 0 max(var(--space-3), env(safe-area-inset-left));
   }
 
   .brandName {
     display: none;
+  }
+
+  .tabs {
+    justify-self: center;
+    max-width: 100%;
+  }
+
+  .tab {
+    padding: 10px 11px;
+  }
+
+  .main {
+    padding: var(--space-4) var(--space-3) max(152px, calc(132px + env(safe-area-inset-bottom)));
+  }
+
+  .themeButton {
+    width: 40px;
+    height: 40px;
   }
 }

@@ -11,11 +11,13 @@
 
 .today {
   padding: var(--space-5);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-md);
+  padding-bottom: var(--space-6);
+  border-radius: var(--r-xl);
+  background-color: var(--surface);
+  background-image: var(--grad-wash);
+  box-shadow: var(--shadow-card);
   border: 2px dashed transparent;
-  transition: border-color 160ms ease, background 160ms ease;
+  transition: border-color 160ms ease, background-color 160ms ease;
 }
 
 .todayOver {
@@ -27,25 +29,35 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-4);
+  flex-wrap: wrap;
+  gap: var(--space-3);
   margin-bottom: var(--space-5);
 }
 
 .todayTitle {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: 30px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.28em 0.35em;
+  flex: 1;
+  min-width: 0;
+  font-size: clamp(26px, 3.2vw, 36px);
+  font-weight: 700;
   color: var(--ink);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
 }
 
-.todayTitle svg {
+.todayFriendly {
+  font-weight: 700;
   color: var(--accent);
 }
 
-.todayDate {
-  margin-top: 2px;
-  font-size: 14px;
+.todayRest {
+  font-size: 0.48em;
+  font-weight: 600;
+  font-style: normal;
+  letter-spacing: -0.01em;
   color: var(--ink-faint);
 }
 
@@ -53,7 +65,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  flex-shrink: 0;
+  min-height: 40px;
+  padding: 8px 12px 8px 10px;
   border-radius: var(--r-pill);
   background: var(--surface-2);
   color: var(--ink-soft);
@@ -75,22 +89,32 @@
 .todayRow {
   position: relative;
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: 13px 14px 13px 20px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  padding: 14px 16px 14px 22px;
   border-radius: var(--r-md);
   border: 1.5px solid transparent;
-  cursor: grab;
+  background-image: var(--grad-wash);
   /* El transform lo maneja dnd-kit al reordenar; el hover no puede pelearle. */
   transition: box-shadow 140ms ease;
 }
 
-.todayRow:hover {
-  box-shadow: var(--shadow-sm);
+.todayRowMain {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  cursor: grab;
 }
 
-.todayRow:active {
+.todayRowMain:active {
   cursor: grabbing;
+}
+
+.todayRow:hover {
+  box-shadow: var(--shadow-sm);
 }
 
 .rowHidden {
@@ -99,11 +123,33 @@
 
 .rowBar {
   position: absolute;
-  left: 8px;
-  top: 12px;
-  bottom: 12px;
-  width: 4px;
+  left: -12px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
   border-radius: var(--r-pill);
+  translate: 0 -50%;
+}
+
+.rowChevron {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin: 0 -4px 0 -6px;
+  border-radius: var(--r-pill);
+  color: var(--ink-faint);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.rowChevron svg {
+  transition: transform var(--dur) var(--ease-out);
+}
+
+.rowChevron:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
 }
 
 .rowTitle {
@@ -125,33 +171,44 @@
   width: 30px;
   height: 30px;
   border-radius: var(--r-pill);
-  color: transparent;
+  /* Atenuado en reposo, no invisible: en transparente la accion era indescubrible
+     salvo que pasaras el mouse por las filas a ver que aparecia. */
+  color: var(--ink-faint);
+  opacity: 0.45;
   flex-shrink: 0;
+  transition: opacity var(--dur-fast) ease;
 }
 
 .todayRow:hover .rowEye {
-  color: var(--ink-faint);
+  opacity: 1;
+}
+
+.todayRow > .subtasks {
+  margin: 4px 0 2px 34px;
 }
 
 .rowEye:hover {
   color: var(--ink);
+  opacity: 1;
   background: color-mix(in srgb, var(--surface) 60%, transparent);
 }
 
 .rowEye:focus-visible {
   color: var(--ink);
+  opacity: 1;
 }
 
 @media (hover: none) {
   .rowEye {
-    color: var(--ink-faint);
+    opacity: 1;
   }
 }
 
 .dropHint {
   padding: var(--space-6) var(--space-5);
-  border-radius: var(--r-md);
+  border-radius: var(--r-lg);
   background: var(--surface-2);
+  background-image: var(--grad-wash);
   text-align: center;
   animation: fade-rise var(--dur-slow) var(--ease-out) both;
 }
@@ -204,8 +261,9 @@
 }
 
 .railTitle {
-  font-size: 17px;
-  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-faint);
 }
 
 .railAdd {
@@ -239,7 +297,9 @@
 
 .group {
   padding: var(--space-3);
-  border-radius: var(--r-md);
+  border-radius: var(--r-lg);
+  background-image: var(--grad-wash);
+  box-shadow: var(--shadow-sm);
 }
 
 .groupHeader {
@@ -317,8 +377,9 @@
 }
 
 .railTask {
-  padding: 10px 12px;
-  border-radius: var(--r-sm);
+  padding: 11px 13px;
+  border-radius: var(--r-md);
+  background-image: var(--grad-wash);
   cursor: grab;
   transition: transform 140ms ease, box-shadow 140ms ease;
 }
@@ -396,7 +457,7 @@
   align-items: center;
   gap: var(--space-2);
   padding: 12px 18px;
-  border-radius: var(--r-md);
+  border-radius: var(--r-lg);
   background: var(--surface);
   box-shadow: var(--shadow-lg);
   font-weight: 700;
@@ -433,11 +494,17 @@
 
 @media (max-width: 980px) {
   .layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .today {
-    min-height: 60vh;
+    min-height: 0;
+    padding: var(--space-4);
+    padding-bottom: var(--space-5);
+  }
+
+  .todayTitle {
+    font-size: 26px;
   }
 
   .hintDesktop {
@@ -446,5 +513,24 @@
 
   .hintMobile {
     display: inline;
+  }
+
+  .railHeader {
+    padding: 0;
+  }
+
+  .todayRow {
+    gap: var(--space-2);
+    padding: 12px 12px 12px 20px;
+  }
+
+  .groupToggle {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .railTaskTitle,
+  .rowTitle {
+    min-width: 0;
   }
 }

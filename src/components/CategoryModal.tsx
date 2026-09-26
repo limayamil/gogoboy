@@ -81,7 +81,11 @@ export function CategoryModal({
         </>
       }
     >
-      {error ? <p className={styles.error}>{error}</p> : null}
+      {error ? (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
+      ) : null}
 
       <label className={styles.field}>
         <span className={styles.label}>Nombre</span>

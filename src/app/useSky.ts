@@ -18,11 +18,18 @@ export interface SkyState {
 
 export function useSky(): SkyState {
   const { mode } = useThemeMode()
-  const [now, setNow] = useState(() => new Date())
+  // Guardamos la franja, no el instante: el reloj corre cada minuto pero el periodo
+  // cambia seis veces al dia. Devolver el valor anterior cuando no cambio corta el
+  // re-render, que de otro modo arrastraba al <Outlet /> entero cada 60 segundos.
+  const [period, setPeriod] = useState<DayPeriod>(() => dayPeriod(new Date()))
   const [raining, setRaining] = useState(false)
 
   useEffect(() => {
-    const tick = () => setNow(new Date())
+    const tick = () =>
+      setPeriod((prev) => {
+        const next = dayPeriod(new Date())
+        return next === prev ? prev : next
+      })
     const id = window.setInterval(tick, 60_000)
     const onVisible = () => {
       if (document.visibilityState === 'visible') tick()
@@ -70,6 +77,5 @@ export function useSky(): SkyState {
     }
   }, [])
 
-  const period = dayPeriod(now)
   return { period, raining, palette: skyPalette(period, mode) }
 }

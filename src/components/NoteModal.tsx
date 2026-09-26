@@ -95,6 +95,14 @@ export function NoteModal({
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const snapshot = useRef({
+    title: note?.title ?? '',
+    description: note?.description ?? '',
+    username: note?.username ?? '',
+    password: note?.password ?? '',
+    tags: (note?.tags.map((tag) => tag.name) ?? []).join('\u0001'),
+  })
+
   const fileInput = useRef<HTMLInputElement>(null)
   const dragDepth = useRef(0)
   const storageOn = data?.storageConfigured ?? true
@@ -264,6 +272,20 @@ export function NoteModal({
     setTags((prev) => prev.filter((tag) => tag !== name))
   }
 
+  const isDirty = () => {
+    if (title !== snapshot.current.title) return true
+    if (description !== snapshot.current.description) return true
+    if (username !== snapshot.current.username) return true
+    if (password !== snapshot.current.password) return true
+    if (tags.join('\u0001') !== snapshot.current.tags) return true
+    return !isEdit && draftFiles.length > 0
+  }
+
+  function canClose() {
+    if (!isDirty()) return true
+    return window.confirm('Tenés cambios sin guardar. ¿Querés cerrar y descartarlos?')
+  }
+
   const suggestions = useMemo(
     () =>
       knownTags
@@ -305,7 +327,7 @@ export function NoteModal({
 
     try {
       if (note) {
-        await updateNote.mutateAsync({
+        updateNote.mutate({
           id: note.id,
           patch: isPassword
             ? {
@@ -387,6 +409,8 @@ export function NoteModal({
             : 'Nueva nota'
       }
       onClose={onClose}
+      canClose={canClose}
+      autoFocus={false}
       footer={
         <>
           {note ? (
@@ -401,7 +425,13 @@ export function NoteModal({
             </span>
           )}
           <span className={styles.spacer} />
-          <button type="button" className={styles.ghost} onClick={onClose}>
+          <button
+            type="button"
+            className={styles.ghost}
+            onClick={() => {
+              if (canClose()) onClose()
+            }}
+          >
             Cancelar
           </button>
           <button type="button" className={styles.primary} onClick={() => void handleSave()} disabled={busy}>

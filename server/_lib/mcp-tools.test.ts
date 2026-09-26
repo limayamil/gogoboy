@@ -27,6 +27,7 @@ const task = (over: Partial<Task> = {}): Task => ({
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
   completedAt: null,
+  expired: false,
   subtasks: [],
   attachments: [],
   links: [],
@@ -62,6 +63,7 @@ const state = (over: Partial<AppState> = {}): AppState => ({
   notes: [],
   quickTasks: [],
   storageConfigured: false,
+  version: '',
   ...over,
 })
 
@@ -94,6 +96,31 @@ describe('callTool hoy', () => {
     })
     expect((result as { tasks: unknown[] }).tasks).toHaveLength(1)
     expect((result as { quickTasks: unknown[] }).quickTasks).toHaveLength(1)
+  })
+
+  it('omite las hechas de semanas ya cerradas', () => {
+    const result = callTool(
+      'hoy',
+      {},
+      state({
+        tasks: [
+          task({ id: 'viva', title: 'Pendiente', inToday: true }),
+          task({
+            id: 'vieja',
+            title: 'Hecha la semana pasada',
+            status: 'hecha',
+            inToday: true,
+            completedAt: '2026-09-08T15:00:00-03:00',
+          }),
+        ],
+      }),
+      {
+        today: '2026-09-15',
+        week: ['2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17', '2026-09-18', '2026-09-19', '2026-09-20'],
+      },
+    )
+
+    expect(result).toMatchObject({ tasks: [{ id: 'viva' }] })
   })
 })
 

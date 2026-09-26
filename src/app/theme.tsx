@@ -27,7 +27,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document.documentElement.dataset.theme = mode
     localStorage.setItem('gogoboy-theme', mode)
     const meta = document.querySelector('meta[name="theme-color"]')
-    if (meta) meta.setAttribute('content', mode === 'dark' ? '#17141c' : '#fbf6f3')
+    if (meta) meta.setAttribute('content', mode === 'dark' ? '#161218' : '#f6f0ea')
   }, [mode])
 
   const api = useMemo<ThemeApi>(

@@ -1,5 +1,6 @@
 /**
- * Paleta pastel curada (inspirada en design/refe3.jpeg y design/refe4.jpeg).
+ * Paleta pastel curada (inspirada en las dos referencias de Yamil: wellness
+ * peach/lavanda/menta y productividad coral/mostaza).
  *
  * Las categorias guardan la CLAVE, nunca el hex: asi un ajuste de paleta o el cambio
  * de tema se aplican solos a todo lo ya creado.
@@ -27,53 +28,53 @@ export interface PastelColor extends ColorVariant {
 export const PALETTE: PastelColor[] = [
   {
     key: 'coral', label: 'Coral',
-    bg: '#FFE3DC', soft: '#FFF1ED', dot: '#F4836C', ink: '#8C3A2A',
-    dark: { bg: '#3A2320', soft: '#2E1D1B', dot: '#F4836C', ink: '#FFC9BD' },
+    bg: '#F6D0CC', soft: '#FBECEA', dot: '#E8897A', ink: '#8A3D38',
+    dark: { bg: '#3A2320', soft: '#2E1D1B', dot: '#E8897A', ink: '#FFC9BD' },
   },
   {
     key: 'rosa', label: 'Rosa',
-    bg: '#FFE0EC', soft: '#FFF0F5', dot: '#F07AA6', ink: '#8E2F56',
-    dark: { bg: '#3A2029', soft: '#2E1A21', dot: '#F07AA6', ink: '#FFC6DC' },
+    bg: '#F5D0DC', soft: '#FBEFF4', dot: '#E07AA0', ink: '#8A3558',
+    dark: { bg: '#3A2029', soft: '#2E1A21', dot: '#E07AA0', ink: '#FFC6DC' },
   },
   {
     key: 'lila', label: 'Lila',
-    bg: '#EBE2FB', soft: '#F5F0FE', dot: '#A78BE6', ink: '#513A87',
-    dark: { bg: '#2C2440', soft: '#241E34', dot: '#A78BE6', ink: '#D9C9FF' },
+    bg: '#DDD6F6', soft: '#F0EDFB', dot: '#9A8FE3', ink: '#4A3E8A',
+    dark: { bg: '#2C2440', soft: '#241E34', dot: '#9A8FE3', ink: '#D9C9FF' },
   },
   {
     key: 'lavanda', label: 'Lavanda',
-    bg: '#E1E5FA', soft: '#F0F2FD', dot: '#8496E3', ink: '#37457F',
-    dark: { bg: '#232842', soft: '#1D2136', dot: '#8496E3', ink: '#C6D0FF' },
+    bg: '#D2D6F5', soft: '#EEEFFC', dot: '#7E8DE0', ink: '#36407A',
+    dark: { bg: '#232842', soft: '#1D2136', dot: '#7E8DE0', ink: '#C6D0FF' },
   },
   {
     key: 'cielo', label: 'Cielo',
-    bg: '#DCEEF9', soft: '#EFF7FC', dot: '#6FB4DC', ink: '#245675',
-    dark: { bg: '#1C2E3A', soft: '#17262F', dot: '#6FB4DC', ink: '#BEE2F7' },
+    bg: '#D4E8F6', soft: '#ECF5FB', dot: '#6AADD8', ink: '#245570',
+    dark: { bg: '#1C2E3A', soft: '#17262F', dot: '#6AADD8', ink: '#BEE2F7' },
   },
   {
     key: 'menta', label: 'Menta',
-    bg: '#D9F0E5', soft: '#EEF8F3', dot: '#63BF98', ink: '#1F6148',
-    dark: { bg: '#1B3029', soft: '#172722', dot: '#63BF98', ink: '#B5EBD3' },
+    bg: '#CDEDE4', soft: '#E8F7F2', dot: '#5BB89A', ink: '#1E5F4C',
+    dark: { bg: '#1B3029', soft: '#172722', dot: '#5BB89A', ink: '#B5EBD3' },
   },
   {
     key: 'salvia', label: 'Salvia',
-    bg: '#E4EEDC', soft: '#F2F7EE', dot: '#8DB473', ink: '#41602C',
-    dark: { bg: '#24301E', soft: '#1E2819', dot: '#8DB473', ink: '#CFE5BC' },
+    bg: '#DCE9D4', soft: '#F0F6EC', dot: '#7EAE6A', ink: '#3A5A2C',
+    dark: { bg: '#24301E', soft: '#1E2819', dot: '#7EAE6A', ink: '#CFE5BC' },
   },
   {
     key: 'manteca', label: 'Manteca',
-    bg: '#FCF0CE', soft: '#FEF8E7', dot: '#E4B84C', ink: '#7C5C10',
-    dark: { bg: '#362D17', soft: '#2C2513', dot: '#E4B84C', ink: '#F7E1A8' },
+    bg: '#F6E2B0', soft: '#FBF3DC', dot: '#E0B04A', ink: '#7A5A12',
+    dark: { bg: '#362D17', soft: '#2C2513', dot: '#E0B04A', ink: '#F7E1A8' },
   },
   {
     key: 'durazno', label: 'Durazno',
-    bg: '#FDE6D2', soft: '#FEF3E9', dot: '#EE9E5C', ink: '#8A4E17',
-    dark: { bg: '#38271A', soft: '#2D2015', dot: '#EE9E5C', ink: '#FBD6B4' },
+    bg: '#F6D8C4', soft: '#FBF0E8', dot: '#E8A06A', ink: '#8A4E20',
+    dark: { bg: '#38271A', soft: '#2D2015', dot: '#E8A06A', ink: '#FBD6B4' },
   },
   {
     key: 'arena', label: 'Arena',
-    bg: '#EFE7DF', soft: '#F8F3EF', dot: '#B69B83', ink: '#5F4B38',
-    dark: { bg: '#2F2822', soft: '#27211C', dot: '#B69B83', ink: '#E3D2C1' },
+    bg: '#EDE4DA', soft: '#F7F2ED', dot: '#B89A82', ink: '#5C4A38',
+    dark: { bg: '#2F2822', soft: '#27211C', dot: '#B89A82', ink: '#E3D2C1' },
   },
 ]
 

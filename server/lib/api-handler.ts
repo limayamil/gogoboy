@@ -30,10 +30,12 @@ import links from '../links/index.ts'
 import linkById from '../links/[id].ts'
 import notes from '../notes/index.ts'
 import noteById from '../notes/[id].ts'
+import version from '../version.ts'
 import uploadsSign from '../uploads/sign.ts'
 
 const routes: Route[] = [
   ['/api/state', state],
+  ['/api/version', version],
   ['/api/mcp', mcp],
   ['/api/categories', categories],
   ['/api/categories/:id', categoryById],

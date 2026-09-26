@@ -29,15 +29,15 @@ export default route({
       }
     })
 
-    const [{ next: position }] = (await sql`
-      select coalesce(max(position), -1) + 1 as next
-      from tasks
-      where category_id is not distinct from ${input.categoryId ?? null}
-    `) as Row[]
-
-    const [{ next: todayPosition }] = (await sql`
-      select coalesce(max(today_position), -1) + 1 as next from tasks where in_today = true
-    `) as Row[]
+    // Las dos posiciones son independientes entre si: una sola espera, no dos.
+    const [[{ next: position }], [{ next: todayPosition }]] = (await Promise.all([
+      sql`
+        select coalesce(max(position), -1) + 1 as next
+        from tasks
+        where category_id is not distinct from ${input.categoryId ?? null}
+      `,
+      sql`select coalesce(max(today_position), -1) + 1 as next from tasks where in_today = true`,
+    ])) as Row[][]
 
     const [created] = (await sql`
       insert into tasks (
@@ -55,18 +55,38 @@ export default route({
 
     const taskId = created.id as string
 
-    for (const [index, title] of subtaskTitles.entries()) {
-      await sql`
-        insert into subtasks (task_id, title, position) values (${taskId}, ${title}, ${index})
-      `
+    /**
+     * Subtareas y links entran con una sentencia por tabla, no una por fila: `unnest`
+     * expande los arrays en filas del lado de Postgres. Antes esto era un `await` dentro
+     * de un `for`, o sea un round-trip HTTP por subtarea, y si fallaba el cuarto insert
+     * quedaban tres subtareas huerfanas colgando de la tarea recien creada.
+     */
+    const inserts: Promise<unknown>[] = []
+
+    if (subtaskTitles.length > 0) {
+      inserts.push(sql`
+        insert into subtasks (task_id, title, position)
+        select ${taskId}, title, position
+        from unnest(
+          ${subtaskTitles}::text[],
+          ${subtaskTitles.map((_, index) => index)}::int[]
+        ) as t(title, position)
+      `)
     }
 
-    for (const [index, link] of links.entries()) {
-      await sql`
+    if (links.length > 0) {
+      inserts.push(sql`
         insert into task_links (task_id, url, title, position)
-        values (${taskId}, ${link.url}, ${link.title}, ${index})
-      `
+        select ${taskId}, url, title, position
+        from unnest(
+          ${links.map((link) => link.url)}::text[],
+          ${links.map((link) => link.title)}::text[],
+          ${links.map((_, index) => index)}::int[]
+        ) as t(url, title, position)
+      `)
     }
+
+    await Promise.all(inserts)
 
     res.status(201).json(await loadTask(taskId))
   },

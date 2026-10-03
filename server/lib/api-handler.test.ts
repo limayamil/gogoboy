@@ -15,6 +15,14 @@ describe('handleApi', () => {
     expect((await call(`/api/notes/${UUID}`)).status).toBe(204)
     expect((await call('/api/mcp')).status).toBe(204)
     expect((await call('/api/version')).status).toBe(204)
+    expect((await call(`/api/proposals/${UUID}`)).status).toBe(204)
+  })
+
+  it('tomar y tirar existen, y sin JWT no llegan a la base', async () => {
+    const post = await call(`/api/proposals/${UUID}`, 'POST')
+    const del = await call(`/api/proposals/${UUID}`, 'DELETE')
+    expect(post.status).toBe(401)
+    expect(del.status).toBe(401)
   })
 
   it('responde 404 JSON cuando la ruta no existe', async () => {

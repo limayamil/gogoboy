@@ -12,8 +12,8 @@ export type VerifyToken = (token: string) => Promise<TokenPayload | null>
  * user_id, asi que sin allowlist cualquier cuenta valida veria todos los datos.
  *
  * /api/mcp es la excepcion: va con AUTH_AGENT_TOKEN, no con sesion humana. El
- * token de agente no abre el resto de /api (no hay user_id; un write seria de
- * la cuenta entera).
+ * token de agente no abre el resto de /api. Ahi solo escribe propuestas: no
+ * crea tareas, categorias, notas ni quick tasks, y no acepta una propuesta.
  */
 export function createAuthenticator(options: {
   allowedEmail: string

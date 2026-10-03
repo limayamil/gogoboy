@@ -32,6 +32,7 @@ import notes from '../notes/index.ts'
 import noteById from '../notes/[id].ts'
 import version from '../version.ts'
 import uploadsSign from '../uploads/sign.ts'
+import proposalById from '../proposals/[id].ts'
 
 const routes: Route[] = [
   ['/api/state', state],
@@ -52,6 +53,7 @@ const routes: Route[] = [
   ['/api/links', links],
   ['/api/links/:id', linkById],
   ['/api/uploads/sign', uploadsSign],
+  ['/api/proposals/:id', proposalById],
 ]
 
 export const handleApi = createApiHandler(routes, authenticateRequest)

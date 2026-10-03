@@ -7,6 +7,7 @@ import type {
   NoteInput,
   NoteKind,
   Status,
+  TakeProposalInput,
   TaskInput,
   Urgency,
 } from '../../src/shared/types.ts'
@@ -169,6 +170,78 @@ export function parseTaskPatch(input: Record<string, unknown>): Partial<TaskInpu
   if ('position' in input) patch.position = int(input.position, 'position')
   if (Object.keys(patch).length === 0) fail('No hay nada para actualizar')
   return patch
+}
+
+const PROPOSAL_ORIGEN_MAX = 80
+const PROPOSAL_CLAVE_MAX = 200
+
+/** Alta de propuesta. Sin inToday ni status: eso lo decide Yamil al tomar. */
+export interface ProposalInput {
+  title: string
+  description: string | null
+  urgency: Urgency
+  deadline: string | null
+  categoryName: string | null
+  categoryId: string | null
+  origen: string | null
+  origenUrl: string | null
+  origenClave: string | null
+}
+
+export type ProposalPatch = Partial<ProposalInput>
+
+function optionalHttpUrl(value: unknown, field: string): string | null {
+  if (value == null || value === '') return null
+  return httpUrl(value, field)
+}
+
+function rejectTaskFields(input: Record<string, unknown>): void {
+  // El bot no marca Hoy ni un estado: una propuesta no es una tarea.
+  if ('inToday' in input || 'status' in input) {
+    fail('Una propuesta no acepta inToday ni status')
+  }
+}
+
+export function parseProposalCreate(input: Record<string, unknown>): ProposalInput {
+  rejectTaskFields(input)
+  return {
+    title: requiredText(input.title, 'title', 200),
+    description: optionalText(input.description, 'description', RICH_TEXT_MAX),
+    urgency: input.urgency == null ? 'media' : urgency(input.urgency),
+    deadline: dateOrNull(input.deadline, 'deadline'),
+    categoryName: optionalText(input.categoryName, 'categoryName', 60),
+    categoryId: uuidOrNull(input.categoryId, 'categoryId'),
+    origen: optionalText(input.origen, 'origen', PROPOSAL_ORIGEN_MAX),
+    origenUrl: optionalHttpUrl(input.origenUrl, 'origenUrl'),
+    origenClave: optionalText(input.origenClave, 'origenClave', PROPOSAL_CLAVE_MAX),
+  }
+}
+
+/** Igual que parseTaskPatch: solo las claves presentes, para no pisar con null lo que no mandaron. */
+export function parseProposalPatch(input: Record<string, unknown>): ProposalPatch {
+  rejectTaskFields(input)
+  const patch: ProposalPatch = {}
+  if ('title' in input) patch.title = requiredText(input.title, 'title', 200)
+  if ('description' in input) patch.description = optionalText(input.description, 'description', RICH_TEXT_MAX)
+  if ('urgency' in input) patch.urgency = urgency(input.urgency)
+  if ('deadline' in input) patch.deadline = dateOrNull(input.deadline, 'deadline')
+  if ('categoryName' in input) patch.categoryName = optionalText(input.categoryName, 'categoryName', 60)
+  if ('categoryId' in input) patch.categoryId = uuidOrNull(input.categoryId, 'categoryId')
+  if ('origen' in input) patch.origen = optionalText(input.origen, 'origen', PROPOSAL_ORIGEN_MAX)
+  if ('origenUrl' in input) patch.origenUrl = optionalHttpUrl(input.origenUrl, 'origenUrl')
+  if ('origenClave' in input) patch.origenClave = optionalText(input.origenClave, 'origenClave', PROPOSAL_CLAVE_MAX)
+  if (Object.keys(patch).length === 0) fail('No hay nada para actualizar')
+  return patch
+}
+
+/** Body de POST /api/proposals/:id. Un objeto vacio es valido: copia la fecha y no pone en Hoy. */
+export function parseTakeProposal(input: Record<string, unknown>): TakeProposalInput {
+  const body: TakeProposalInput = {}
+  if ('categoryId' in input) body.categoryId = uuidOrNull(input.categoryId, 'categoryId')
+  if ('categoryName' in input) body.categoryName = optionalText(input.categoryName, 'categoryName', 60)
+  if ('deadline' in input) body.deadline = dateOrNull(input.deadline, 'deadline')
+  if ('inToday' in input) body.inToday = bool(input.inToday, 'inToday')
+  return body
 }
 
 const MAX_TAGS = 20

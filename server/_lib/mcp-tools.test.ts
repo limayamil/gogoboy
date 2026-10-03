@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { AppState, Category, Note, QuickTask, Task } from '../../src/shared/types.ts'
-import { callTool, listTools } from './mcp-tools.ts'
+import type { AppState, Category, Note, Proposal, QuickTask, Task } from '../../src/shared/types.ts'
+import { callProposalTool, callTool, listTools } from './mcp-tools.ts'
 
 const category = (over: Partial<Category> = {}): Category => ({
   id: 'cat-casa',
@@ -62,14 +62,25 @@ const state = (over: Partial<AppState> = {}): AppState => ({
   tasks: [],
   notes: [],
   quickTasks: [],
+  proposals: [],
   storageConfigured: false,
   version: '',
   ...over,
 })
 
 describe('listTools', () => {
-  it('expone hoy, semana, tareas y notas', () => {
-    expect(listTools().map((tool) => tool.name)).toEqual(['hoy', 'semana', 'tareas', 'notas'])
+  it('expone las de lectura y las de la bandeja', () => {
+    expect(listTools().map((tool) => tool.name)).toEqual([
+      'hoy',
+      'semana',
+      'tareas',
+      'notas',
+      'categorias',
+      'propuestas',
+      'proponer',
+      'actualizar_propuesta',
+      'descartar_propuesta',
+    ])
   })
 })
 
@@ -203,5 +214,130 @@ describe('callTool desconocida', () => {
     expect(() => callTool('borrar', {}, state(), { today: '2026-09-15', week: [] })).toThrow(
       /desconocida/i,
     )
+  })
+
+  it('no trata proponer como lectura', () => {
+    expect(() => callTool('proponer', {}, state(), { today: '2026-09-15', week: [] })).toThrow(
+      /desconocida/i,
+    )
+  })
+})
+
+const proposal = (over: Partial<Proposal> = {}): Proposal => ({
+  id: 'p1',
+  title: 'Llamar al banco',
+  description: 'por la tarjeta',
+  urgency: 'alta',
+  deadline: '2026-10-04',
+  categoryName: 'Tramites',
+  categoryId: null,
+  origen: 'gmail',
+  origenUrl: 'https://mail.example/1',
+  origenClave: 'msg-1',
+  createdAt: '2026-10-03T12:00:00.000Z',
+  updatedAt: '2026-10-03T12:00:00.000Z',
+  ...over,
+})
+
+describe('callTool categorias y propuestas', () => {
+  const clock = { today: '2026-09-15', week: [] as string[] }
+
+  it('una propuesta pendiente no entra en hoy, semana ni tareas, ni crea su categoria', () => {
+    const app = state({
+      proposals: [proposal()],
+      tasks: [task({ id: 'real', title: 'Comprar cafe', inToday: true, deadline: '2026-09-15' })],
+    })
+
+    expect(JSON.stringify(callTool('hoy', {}, app, { ...clock, today: '2026-09-15' }))).not.toContain(
+      'Llamar al banco',
+    )
+    expect(JSON.stringify(callTool('semana', {}, app, { today: '2026-09-15', week: ['2026-09-14', '2026-09-15'] }))).not.toContain(
+      'Llamar al banco',
+    )
+    expect(JSON.stringify(callTool('tareas', {}, app, clock))).not.toContain('Llamar al banco')
+    expect(callTool('categorias', {}, app, clock)).toEqual({
+      categories: [{ id: 'cat-casa', name: 'Casa' }],
+    })
+  })
+
+  it('lista propuestas mas nuevas primero, con categoria sugerida', () => {
+    const result = callTool(
+      'propuestas',
+      {},
+      state({
+        proposals: [
+          proposal({ id: 'vieja', title: 'Vieja', createdAt: '2026-10-01T00:00:00.000Z' }),
+          proposal({ id: 'nueva', title: 'Nueva', createdAt: '2026-10-03T00:00:00.000Z' }),
+        ],
+      }),
+      clock,
+    )
+
+    expect(result).toMatchObject({
+      proposals: [
+        { id: 'nueva', categoryName: 'Tramites', categoryId: null },
+        { id: 'vieja' },
+      ],
+    })
+  })
+})
+
+describe('callProposalTool', () => {
+  it('proponer con solo el nombre no manda categoryId', async () => {
+    let seen: unknown
+    const result = await callProposalTool(
+      'proponer',
+      { title: '  Comprar  ', categoryName: 'Viaje' },
+      {
+        upsert: async (input) => {
+          seen = input
+          return {
+            creada: true,
+            proposal: proposal({ title: input.title, categoryName: input.categoryName, categoryId: input.categoryId }),
+          }
+        },
+        update: async () => null,
+        discard: async () => false,
+      },
+    )
+
+    expect(seen).toMatchObject({
+      title: 'Comprar',
+      categoryName: 'Viaje',
+      categoryId: null,
+      urgency: 'media',
+    })
+    expect(result).toMatchObject({ creada: true })
+  })
+
+  it('rechaza inToday y un categoryId que no es uuid', async () => {
+    const store = {
+      upsert: async () => {
+        throw new Error('no deberia escribir')
+      },
+      update: async () => null,
+      discard: async () => false,
+    }
+    await expect(callProposalTool('proponer', { title: 'x', inToday: false }, store)).rejects.toThrow(
+      /inToday/,
+    )
+    await expect(
+      callProposalTool('proponer', { title: 'x', categoryId: 'no-existe' }, store),
+    ).rejects.toThrow(/uuid/)
+  })
+
+  it('actualizar y descartar avisan si la propuesta no esta', async () => {
+    const store = {
+      upsert: async () => {
+        throw new Error('no')
+      },
+      update: async () => null,
+      discard: async () => false,
+    }
+    const id = '11111111-2222-3333-4444-555555555555'
+    await expect(callProposalTool('actualizar_propuesta', { id, title: 'Otro' }, store)).rejects.toThrow(
+      /no encontrada/,
+    )
+    await expect(callProposalTool('descartar_propuesta', { id }, store)).rejects.toThrow(/no encontrada/)
   })
 })

@@ -7,6 +7,9 @@ import {
   parseNoteCreate,
   parseNotePatch,
   parseTagNames,
+  parseProposalCreate,
+  parseProposalPatch,
+  parseTakeProposal,
   parseTaskCreate,
   parseTaskPatch,
 } from './validate.ts'
@@ -204,6 +207,75 @@ describe('parseNotePatch', () => {
 
   it('rechaza un patch vacio', () => {
     expect(() => parseNotePatch({})).toThrow(HttpError)
+  })
+})
+
+describe('parseProposalCreate', () => {
+  it('completa defaults y deja el id vacio si solo viene el nombre', () => {
+    expect(parseProposalCreate({ title: '  Llamar ', categoryName: 'Casa' })).toMatchObject({
+      title: 'Llamar',
+      categoryName: 'Casa',
+      categoryId: null,
+      urgency: 'media',
+      deadline: null,
+      description: null,
+    })
+  })
+
+  it('rechaza inToday, status, nombre largo y categoryId que no es uuid', () => {
+    expect(() => parseProposalCreate({ title: 'x', inToday: true })).toThrow(HttpError)
+    expect(() => parseProposalCreate({ title: 'x', status: 'pendiente' })).toThrow(HttpError)
+    expect(() => parseProposalCreate({ title: 'x', categoryName: 'a'.repeat(61) })).toThrow(HttpError)
+    expect(() => parseProposalCreate({ title: 'x', categoryId: 'personal' })).toThrow(HttpError)
+  })
+
+  it('acepta fecha y url http, y trata la clave vacia como null', () => {
+    expect(
+      parseProposalCreate({
+        title: 'x',
+        deadline: '2026-10-03',
+        origenUrl: 'https://ejemplo.com/a',
+        origenClave: '   ',
+      }),
+    ).toMatchObject({
+      deadline: '2026-10-03',
+      origenUrl: 'https://ejemplo.com/a',
+      origenClave: null,
+    })
+    expect(() => parseProposalCreate({ title: 'x', origenUrl: 'javascript:alert(1)' })).toThrow(HttpError)
+  })
+})
+
+describe('parseProposalPatch', () => {
+  it('solo devuelve las claves presentes', () => {
+    expect(parseProposalPatch({ categoryName: 'Casa' })).toEqual({ categoryName: 'Casa' })
+    expect('deadline' in parseProposalPatch({ title: 'Otro' })).toBe(false)
+    expect(parseProposalPatch({ deadline: null })).toEqual({ deadline: null })
+  })
+
+  it('rechaza un patch vacio', () => {
+    expect(() => parseProposalPatch({})).toThrow(HttpError)
+  })
+})
+
+describe('parseTakeProposal', () => {
+  it('un body vacio no pide Hoy ni fecha', () => {
+    expect(parseTakeProposal({})).toEqual({})
+    expect('inToday' in parseTakeProposal({})).toBe(false)
+    expect('deadline' in parseTakeProposal({})).toBe(false)
+  })
+
+  it('inToday solo queda en true si el body lo pide', () => {
+    expect(parseTakeProposal({ inToday: true })).toEqual({ inToday: true })
+    expect(parseTakeProposal({ inToday: false })).toEqual({ inToday: false })
+  })
+
+  it('permite borrar la fecha y la categoria', () => {
+    expect(parseTakeProposal({ deadline: null, categoryName: null, categoryId: null })).toEqual({
+      deadline: null,
+      categoryName: null,
+      categoryId: null,
+    })
   })
 })
 

@@ -1,9 +1,18 @@
 import { isExpiredCompleted } from '../../src/shared/expiry.ts'
-import type { AppState, Task } from '../../src/shared/types.ts'
+import type { AppState, Proposal, Task } from '../../src/shared/types.ts'
+import type { ProposalInput, ProposalPatch } from './validate.ts'
+import { parseProposalCreate, parseProposalPatch, uuid } from './validate.ts'
 
 export interface McpClock {
   today: string
   week: string[]
+}
+
+/** Escritura chica: el token de agente no toca tareas ni categorias. */
+export interface ProposalStore {
+  upsert(input: ProposalInput): Promise<{ proposal: Proposal; creada: boolean }>
+  update(id: string, patch: ProposalPatch): Promise<Proposal | null>
+  discard(id: string): Promise<boolean>
 }
 
 export interface McpToolDef {
@@ -12,6 +21,7 @@ export interface McpToolDef {
   inputSchema: {
     type: 'object'
     properties: Record<string, unknown>
+    required?: string[]
     additionalProperties: false
   }
 }
@@ -69,10 +79,80 @@ const TOOLS: McpToolDef[] = [
       additionalProperties: false,
     },
   },
+  {
+    name: 'categorias',
+    description: 'Id y nombre de las categorias que ya existen. Consultala antes de sugerir una.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'propuestas',
+    description: 'Propuestas pendientes de la bandeja, mas nuevas primero. No son tareas.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'proponer',
+    description:
+      'Crea una propuesta, o actualiza la pendiente si origenClave ya existe. No crea tareas ni categorias. categoryId solo si la viste en categorias.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        description: { type: 'string' },
+        urgency: { type: 'string', enum: ['baja', 'media', 'alta'] },
+        deadline: { type: 'string', description: 'YYYY-MM-DD, o null' },
+        categoryName: { type: 'string', description: 'Nombre sugerido, exista o no la categoria' },
+        categoryId: { type: 'string', description: 'Solo si la categoria ya existe' },
+        origen: { type: 'string', description: 'De donde sale: gmail, x, chat' },
+        origenUrl: { type: 'string' },
+        origenClave: { type: 'string', description: 'Si se repite, pisa la propuesta pendiente' },
+      },
+      required: ['title'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'actualizar_propuesta',
+    description: 'Patch de una propuesta pendiente por id. Solo las claves presentes. 404 si no esta.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        title: { type: 'string' },
+        description: { type: 'string' },
+        urgency: { type: 'string', enum: ['baja', 'media', 'alta'] },
+        deadline: { type: 'string' },
+        categoryName: { type: 'string' },
+        categoryId: { type: 'string' },
+        origen: { type: 'string' },
+        origenUrl: { type: 'string' },
+        origenClave: { type: 'string' },
+      },
+      required: ['id'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'descartar_propuesta',
+    description: 'Borra una propuesta pendiente por id. No crea tarea ni categoria. 404 si no esta.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+      },
+      required: ['id'],
+      additionalProperties: false,
+    },
+  },
 ]
 
 export function listTools(): McpToolDef[] {
   return TOOLS
+}
+
+const WRITE_TOOLS = new Set(['proponer', 'actualizar_propuesta', 'descartar_propuesta'])
+
+export function isProposalWriteTool(name: string): boolean {
+  return WRITE_TOOLS.has(name)
 }
 
 export function callTool(
@@ -90,8 +170,68 @@ export function callTool(
       return { tasks: filterTasks(app, args).map((item) => summarizeTask(item, app)) }
     case 'notas':
       return { notes: filterNotes(app, args) }
+    case 'categorias':
+      return projectCategorias(app)
+    case 'propuestas':
+      return projectPropuestas(app)
     default:
       throw new Error(`Herramienta desconocida: ${name}`)
+  }
+}
+
+/** Las de escritura no leen el AppState: pisan o borran en la base. */
+export async function callProposalTool(
+  name: string,
+  args: Record<string, unknown>,
+  store: ProposalStore,
+): Promise<unknown> {
+  switch (name) {
+    case 'proponer':
+      return store.upsert(parseProposalCreate(args))
+    case 'actualizar_propuesta': {
+      const id = uuid(args.id, 'id')
+      const proposal = await store.update(id, parseProposalPatch(args))
+      if (!proposal) throw new Error('Propuesta no encontrada')
+      return { proposal }
+    }
+    case 'descartar_propuesta': {
+      const id = uuid(args.id, 'id')
+      const removed = await store.discard(id)
+      if (!removed) throw new Error('Propuesta no encontrada')
+      return { ok: true }
+    }
+    default:
+      throw new Error(`Herramienta desconocida: ${name}`)
+  }
+}
+
+function projectCategorias(app: AppState) {
+  return {
+    categories: [...app.categories]
+      .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, 'es'))
+      .map((item) => ({ id: item.id, name: item.name })),
+  }
+}
+
+function projectPropuestas(app: AppState) {
+  const proposals = [...app.proposals].sort(
+    (a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id),
+  )
+  return {
+    proposals: proposals.map((item) => ({
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      urgency: item.urgency,
+      deadline: item.deadline,
+      categoryName: item.categoryName,
+      categoryId: item.categoryId,
+      origen: item.origen,
+      origenUrl: item.origenUrl,
+      origenClave: item.origenClave,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+    })),
   }
 }
 

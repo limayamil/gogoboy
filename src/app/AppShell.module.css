@@ -293,15 +293,29 @@
   padding: var(--space-5) var(--space-5) max(140px, calc(120px + env(safe-area-inset-bottom)));
 }
 
-/* Con cuatro pestañas el texto no entra en el centro del header antes que el
-   layout mobile: se esconden las labels y quedan los iconos. */
-@media (max-width: 1080px) {
+.badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* Con cinco pestañas el texto no entra en el centro del header antes que el
+   layout mobile: se esconden las labels y quedan los iconos. El badge no: si
+   no, la cantidad de la bandeja desaparece junto con la palabra. */
+@media (max-width: 1280px) {
   .tab {
     position: relative;
     padding: 8px 12px;
   }
 
-  .tab span {
+  .tabLabel {
     position: absolute;
     width: 1px;
     height: 1px;

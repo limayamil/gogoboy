@@ -7,14 +7,23 @@ const emptyState = (): AppState => ({
   tasks: [],
   notes: [],
   quickTasks: [],
+  proposals: [],
   storageConfigured: false,
   version: '',
 })
 
 const clock = { today: '2026-09-15', week: ['2026-09-14', '2026-09-15'] }
 
+const proposals = {
+  upsert: async () => {
+    throw new Error('upsert no usado')
+  },
+  update: async () => null,
+  discard: async () => false,
+}
+
 async function send(message: unknown, state: AppState = emptyState()) {
-  return handleMcpMessage(message, { loadState: async () => state, clock })
+  return handleMcpMessage(message, { loadState: async () => state, clock, proposals })
 }
 
 describe('handleMcpMessage', () => {
@@ -52,12 +61,32 @@ describe('handleMcpMessage', () => {
     expect(response.body).toBeNull()
   })
 
-  it('lista las tools de solo lectura', async () => {
-    const response = await send({ jsonrpc: '2.0', id: 2, method: 'tools/list' })
+  it('lista lectura y bandeja, y avisa que no crea tareas', async () => {
+    const listed = await send({ jsonrpc: '2.0', id: 2, method: 'tools/list' })
+    const init = await send({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'initialize',
+      params: { protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'grok', version: '1' } },
+    })
 
-    expect(response.status).toBe(200)
-    const body = response.body as { result: { tools: { name: string }[] } }
-    expect(body.result.tools.map((tool) => tool.name)).toEqual(['hoy', 'semana', 'tareas', 'notas'])
+    expect(listed.status).toBe(200)
+    const body = listed.body as { result: { tools: { name: string }[] } }
+    expect(body.result.tools.map((tool) => tool.name)).toEqual([
+      'hoy',
+      'semana',
+      'tareas',
+      'notas',
+      'categorias',
+      'propuestas',
+      'proponer',
+      'actualizar_propuesta',
+      'descartar_propuesta',
+    ])
+    const instructions = JSON.stringify(init.body)
+    expect(instructions).toContain('proponer')
+    expect(instructions).not.toContain('No hay tools de escritura')
+    expect(instructions).toContain('No podes crear tareas ni categorias')
   })
 
   it('ejecuta notas sin filtrar passwords hacia el modelo', async () => {

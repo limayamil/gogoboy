@@ -6,6 +6,8 @@ import type {
   NoteInput,
   QuickTask,
   Subtask,
+  TakeProposalInput,
+  TakeProposalResult,
   Task,
   TaskInput,
   TaskLink,
@@ -31,6 +33,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const detail = await response.json().catch(() => null)
     throw new Error(detail?.error ?? `Error ${response.status} en ${path}`)
   }
+
+  // Tirar responde 204: no hay cuerpo, y response.json() tiraria.
+  if (response.status === 204) return undefined as T
 
   return (await response.json()) as T
 }
@@ -58,6 +63,10 @@ export const api = {
   updateTask: (id: string, patch: Partial<TaskInput>) =>
     request<Task>(`/tasks/${id}`, { method: 'PATCH', body: json(patch) }),
   deleteTask: (id: string) => request<unknown>(`/tasks/${id}`, { method: 'DELETE' }),
+
+  takeProposal: (id: string, input: TakeProposalInput) =>
+    request<TakeProposalResult>(`/proposals/${id}`, { method: 'POST', body: json(input) }),
+  discardProposal: (id: string) => request<void>(`/proposals/${id}`, { method: 'DELETE' }),
 
   createSubtask: (input: { taskId: string; title: string }) =>
     request<Subtask>('/subtasks', { method: 'POST', body: json(input) }),

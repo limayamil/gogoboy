@@ -1,0 +1,219 @@
+.page {
+  max-width: 760px;
+  min-width: 0;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: var(--space-5);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: clamp(26px, 3.2vw, 36px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.title svg {
+  color: var(--accent);
+}
+
+.subtitle {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-faint);
+}
+
+.empty {
+  padding: var(--space-5);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  background-image: var(--grad-wash);
+  box-shadow: var(--shadow-card);
+}
+
+.cardBody {
+  min-width: 0;
+  flex: 1;
+}
+
+.cardTitle {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.meta a {
+  color: var(--accent-ink);
+}
+
+.urgency {
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.urgency_baja {
+  background: var(--urgency-baja);
+}
+
+.urgency_media {
+  background: var(--urgency-media);
+}
+
+.urgency_alta {
+  background: var(--urgency-alta);
+}
+
+.excerpt {
+  margin-top: 8px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.take,
+.confirm {
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+.take:hover,
+.confirm:hover {
+  filter: brightness(1.05);
+}
+
+.drop,
+.cancel,
+.clear {
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+.drop:hover,
+.cancel:hover,
+.clear:hover {
+  color: var(--ink);
+}
+
+.clear {
+  align-self: flex-start;
+  padding: 4px 0;
+  background: none;
+}
+
+.takeTitle {
+  font-size: 16px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  font-size: 15px;
+}
+
+.hint {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-faint);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+}
+
+.check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .card {
+    flex-direction: column;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .take,
+  .drop {
+    flex: 1;
+    min-height: 40px;
+  }
+}

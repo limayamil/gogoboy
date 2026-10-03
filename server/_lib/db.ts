@@ -5,6 +5,7 @@ import type {
   Note,
   NoteKind,
   NoteTag,
+  Proposal,
   QuickTask,
   Subtask,
   Task,
@@ -116,6 +117,23 @@ export function mapTaskLink(row: Row): TaskLink {
     url: row.url as string,
     title: (row.title as string | null) ?? null,
     position: Number(row.position),
+  }
+}
+
+export function mapProposal(row: Row): Proposal {
+  return {
+    id: row.id as string,
+    title: row.title as string,
+    description: (row.description as string | null) ?? null,
+    urgency: row.urgency as Proposal['urgency'],
+    deadline: toDateString(row.deadline),
+    categoryName: (row.category_name as string | null) ?? null,
+    categoryId: (row.category_id as string | null) ?? null,
+    origen: (row.origen as string | null) ?? null,
+    origenUrl: (row.origen_url as string | null) ?? null,
+    origenClave: (row.origen_clave as string | null) ?? null,
+    createdAt: toIso(row.created_at),
+    updatedAt: toIso(row.updated_at),
   }
 }
 

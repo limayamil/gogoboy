@@ -4,6 +4,7 @@ import {
   mapCategory,
   mapNote,
   mapNoteTag,
+  mapProposal,
   mapQuickTask,
   mapSubtask,
   mapTask,
@@ -38,6 +39,7 @@ export async function loadAppState(): Promise<AppState> {
       sql`select * from notes order by updated_at desc, created_at desc`,
       sql`select * from note_tags order by name`,
       sql`select * from note_tag_assignments`,
+      sql`select * from proposals order by created_at desc, id desc`,
     ]) as Promise<Row[][]>,
     stateVersion(),
   ])
@@ -51,6 +53,7 @@ export async function loadAppState(): Promise<AppState> {
     notes,
     noteTags,
     noteTagAssignments,
+    proposals,
   ] = tables
 
   const subtasksByTask = new Map<string, Subtask[]>()
@@ -118,6 +121,7 @@ export async function loadAppState(): Promise<AppState> {
       ),
     ),
     quickTasks: quickTasks.map(mapQuickTask),
+    proposals: proposals.map(mapProposal),
     storageConfigured,
     version,
   }

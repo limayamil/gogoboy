@@ -104,6 +104,23 @@ describe('createAuthenticator', () => {
     expect(await response?.json()).toEqual({ error: 'No autenticado' })
   })
 
+  it('no acepta el token de agente en tomar una propuesta', async () => {
+    const authenticate = createAuthenticator({
+      allowedEmail: allowed,
+      agentToken: 'agente-secreto',
+      verifyToken: async () => null,
+    })
+
+    const response = await authenticate(
+      request({
+        path: '/api/proposals/11111111-2222-3333-4444-555555555555',
+        method: 'POST',
+        authorization: 'Bearer agente-secreto',
+      }),
+    )
+    expect(response?.status).toBe(401)
+  })
+
   it('no acepta el token de agente en el resto de /api', async () => {
     const authenticate = createAuthenticator({
       allowedEmail: allowed,

@@ -7,6 +7,7 @@ const state = (): AppState => ({
   tasks: [],
   notes: [],
   quickTasks: [],
+  proposals: [],
   storageConfigured: false,
   version: '',
 })

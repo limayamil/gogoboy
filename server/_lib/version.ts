@@ -13,7 +13,8 @@ export function encodeStateVersion(values: unknown[]): string {
  * Firma barata del estado completo: una sola sentencia, un solo round-trip.
  *
  * Los `count(*)` detectan los borrados — que no dejan rastro en ningun `max` — y
- * los `max` detectan las ediciones. Vive en un solo lugar a proposito: la consumen
+ * los `max` detectan las ediciones. `proposals` entra igual: si no, el banner no
+ * se entera de una propuesta nueva. Vive en un solo lugar a proposito: la consumen
  * GET /api/state y GET /api/version. Si se calcularan por separado, cualquier
  * diferencia haria aparecer el aviso de novedades para siempre.
  */
@@ -32,7 +33,9 @@ export async function stateVersion(): Promise<string> {
       (select count(*) from notes)                      as notes_n,
       (select max(updated_at) from notes)               as notes_at,
       (select count(*) from note_tags)                  as tag_n,
-      (select count(*) from note_tag_assignments)       as tag_assign_n
+      (select count(*) from note_tag_assignments)       as tag_assign_n,
+      (select count(*) from proposals)                  as prop_n,
+      (select max(updated_at) from proposals)           as prop_at
   `) as Row[]
 
   return encodeStateVersion([
@@ -49,5 +52,7 @@ export async function stateVersion(): Promise<string> {
     row.notes_at,
     row.tag_n,
     row.tag_assign_n,
+    row.prop_n,
+    row.prop_at,
   ])
 }

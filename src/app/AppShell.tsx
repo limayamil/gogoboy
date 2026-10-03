@@ -1,8 +1,9 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Fabs } from '../components/Fabs'
-import { IconCalendar, IconGrid, IconLogout, IconMoon, IconNote, IconSun } from '../components/Icons'
+import { IconCalendar, IconGrid, IconInbox, IconLogout, IconMoon, IconNote, IconSun } from '../components/Icons'
 import { authClient } from '../lib/auth'
+import { useAppState } from '../lib/store'
 import { ModalProvider } from './modals'
 import { ToastHost } from './ToastHost'
 import { UpdateBanner } from './UpdateBanner'
@@ -11,10 +12,11 @@ import { useSky } from './useSky'
 import styles from './AppShell.module.css'
 
 const TABS = [
-  { to: '/', label: 'Hoy', Icon: IconSun },
-  { to: '/categorias', label: 'Categorías', Icon: IconGrid },
-  { to: '/semana', label: 'Semana', Icon: IconCalendar },
-  { to: '/notas', label: 'Notas', Icon: IconNote },
+  { to: '/', label: 'Hoy', Icon: IconSun, badge: false },
+  { to: '/categorias', label: 'Categorías', Icon: IconGrid, badge: false },
+  { to: '/semana', label: 'Semana', Icon: IconCalendar, badge: false },
+  { to: '/notas', label: 'Notas', Icon: IconNote, badge: false },
+  { to: '/bandeja', label: 'Bandeja', Icon: IconInbox, badge: true },
 ]
 
 const TITLES: Record<string, string> = {
@@ -22,6 +24,7 @@ const TITLES: Record<string, string> = {
   '/categorias': 'Categorías · GoGoBoy',
   '/semana': 'Semana · GoGoBoy',
   '/notas': 'Notas · GoGoBoy',
+  '/bandeja': 'Bandeja · GoGoBoy',
 }
 
 function DocumentTitle() {
@@ -43,6 +46,7 @@ const RAIN_DROPS = Array.from({ length: 42 }, (_, index) => ({
 export function AppShell() {
   const { mode, toggle } = useThemeMode()
   const { period, raining, palette } = useSky()
+  const pending = useAppState().data?.proposals.length ?? 0
   const [skyReady, setSkyReady] = useState(false)
 
   useEffect(() => {
@@ -106,15 +110,17 @@ export function AppShell() {
         </NavLink>
 
         <nav className={styles.tabs} aria-label="Vistas">
-          {TABS.map(({ to, label, Icon }) => (
+          {TABS.map(({ to, label, Icon, badge }) => (
             <NavLink
               key={to}
               to={to}
               end={to === '/'}
               className={({ isActive }) => `${styles.tab} ${isActive ? styles.tabActive : ''}`}
+              aria-label={badge && pending > 0 ? `${label}, ${pending} pendientes` : undefined}
             >
               <Icon size={20} />
-              <span>{label}</span>
+              <span className={styles.tabLabel}>{label}</span>
+              {badge && pending > 0 ? <span className={styles.badge}>{pending}</span> : null}
             </NavLink>
           ))}
         </nav>

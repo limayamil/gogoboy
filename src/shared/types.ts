@@ -103,12 +103,50 @@ export interface QuickTask {
   createdAt: string
 }
 
+/**
+ * Propuesta del bot, todavia no es una tarea. Vive en su tabla: si fuera una
+ * fila de `tasks`, un filtro olvidado la meteria en Hoy o en Semana.
+ * Aceptar o tirar borra la fila; no hay estado "aceptada".
+ */
+export interface Proposal {
+  id: string
+  title: string
+  description: string | null
+  urgency: Urgency
+  /** Fecha sugerida, YYYY-MM-DD, o null. */
+  deadline: string | null
+  /** Nombre sugerido, exista o no la categoria. */
+  categoryName: string | null
+  /** Solo si el bot la vio en `categorias`. No autoriza a crearla. */
+  categoryId: string | null
+  origen: string | null
+  origenUrl: string | null
+  origenClave: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/** Lo que manda el paso Tomar. Las claves ausentes no pisan el default del servidor. */
+export interface TakeProposalInput {
+  categoryId?: string | null
+  categoryName?: string | null
+  deadline?: string | null
+  inToday?: boolean
+}
+
+export interface TakeProposalResult {
+  task: Task
+  /** Categoria recien creada, o null si se reutilizo una o la tarea quedo sin categoria. */
+  category: Category | null
+}
+
 /** Respuesta de GET /api/state: todo el estado de la app en una sola llamada. */
 export interface AppState {
   categories: Category[]
   tasks: Task[]
   notes: Note[]
   quickTasks: QuickTask[]
+  proposals: Proposal[]
   /** false = faltan las S3_*; el modal esconde los adjuntos en vez de fallar al subir. */
   storageConfigured: boolean
   /** Firma de estos datos. El front la compara contra GET /api/version para avisar

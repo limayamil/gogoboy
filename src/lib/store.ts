@@ -3,7 +3,17 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 import { api, type LinkDraft } from './api'
 import { toastError } from './toast'
-import type { AppState, Category, Note, NoteInput, QuickTask, Task, TaskInput } from '../shared/types'
+import type {
+  AppState,
+  Category,
+  Note,
+  NoteInput,
+  QuickTask,
+  TakeProposalInput,
+  TakeProposalResult,
+  Task,
+  TaskInput,
+} from '../shared/types'
 
 const KEY = ['state'] as const
 
@@ -12,6 +22,7 @@ const EMPTY: AppState = {
   tasks: [],
   notes: [],
   quickTasks: [],
+  proposals: [],
   storageConfigured: false,
   version: '',
 }
@@ -121,6 +132,49 @@ export function useDeleteTask() {
   return useOptimistic({
     mutationFn: (id: string) => api.deleteTask(id),
     optimistic: (state, id) => ({ ...state, tasks: state.tasks.filter((t) => t.id !== id) }),
+  })
+}
+
+/**
+ * Saca la propuesta ya. La tarea y la categoria nueva entran recien con la
+ * respuesta: hasta ahi no existen, y un parche inventado se veria en Hoy.
+ */
+export function useTakeProposal() {
+  return useOptimistic<
+    { id: string; body: TakeProposalInput },
+    TakeProposalResult
+  >({
+    mutationFn: ({ id, body }) => api.takeProposal(id, body),
+    optimistic: (state, { id }) => ({
+      ...state,
+      proposals: state.proposals.filter((item) => item.id !== id),
+    }),
+    commit: (state, result, { id }) => {
+      const category = result.category
+      return {
+        ...state,
+        proposals: state.proposals.filter((item) => item.id !== id),
+        tasks: state.tasks.some((task) => task.id === result.task.id)
+          ? state.tasks.map((task) => (task.id === result.task.id ? result.task : task))
+          : [...state.tasks, result.task],
+        categories: category
+          ? state.categories.some((item) => item.id === category.id)
+            ? state.categories.map((item) => (item.id === category.id ? category : item))
+            : [...state.categories, category]
+          : state.categories,
+      }
+    },
+  })
+}
+
+/** Tirar no crea nada: el parche solo saca la fila. Si el DELETE falla, vuelve. */
+export function useDiscardProposal() {
+  return useOptimistic({
+    mutationFn: (id: string) => api.discardProposal(id),
+    optimistic: (state, id) => ({
+      ...state,
+      proposals: state.proposals.filter((item) => item.id !== id),
+    }),
   })
 }
 

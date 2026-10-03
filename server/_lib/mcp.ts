@@ -1,9 +1,17 @@
 import type { AppState } from '../../src/shared/types.ts'
-import { callTool, listTools, type McpClock } from './mcp-tools.ts'
+import {
+  callProposalTool,
+  callTool,
+  isProposalWriteTool,
+  listTools,
+  type McpClock,
+  type ProposalStore,
+} from './mcp-tools.ts'
 
 export interface McpDeps {
   loadState: () => Promise<AppState>
   clock: McpClock
+  proposals: ProposalStore
 }
 
 export interface McpHttpResult {
@@ -22,7 +30,8 @@ type JsonRpc = {
 
 /**
  * MCP JSON-RPC de un request. Stateless a proposito: Grok (y Vercel) no
- * mantienen sesion entre POSTs, y estas tools son lecturas puntuales.
+ * mantienen sesion entre POSTs. Las lecturas proyectan el estado ya cargado;
+ * proponer escribe solo en la bandeja y no crea tareas ni categorias.
  */
 export async function handleMcpMessage(raw: unknown, deps: McpDeps): Promise<McpHttpResult> {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
@@ -57,7 +66,7 @@ async function dispatch(method: string, params: unknown, deps: McpDeps): Promise
         capabilities: { tools: {} },
         serverInfo: { name: 'gogoboy', version: '0.1.0' },
         instructions:
-          'GoGoBoy es la lista personal del usuario. Usa hoy/semana/tareas/notas para leer el estado actual. No hay tools de escritura. Las notas tipo password no estan disponibles.',
+          'GoGoBoy es la lista personal del usuario. Usa hoy, semana, tareas y notas para leer. categorias lista las que ya existen; propuestas lista la bandeja. podes proponer, actualizar_propuesta y descartar_propuesta. No podes crear tareas ni categorias: eso lo decide el usuario al tomar. Las notas tipo password no estan disponibles.',
       }
     case 'notifications/initialized':
     case 'notifications/cancelled':
@@ -86,7 +95,10 @@ async function callNamedTool(params: unknown, deps: McpDeps) {
       : {}
 
   try {
-    const payload = callTool(name, args, await deps.loadState(), deps.clock)
+    // Las de escritura no cargan el estado: no tienen que ver tasks para proponer.
+    const payload = isProposalWriteTool(name)
+      ? await callProposalTool(name, args, deps.proposals)
+      : callTool(name, args, await deps.loadState(), deps.clock)
     return {
       content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }],
     }

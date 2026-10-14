@@ -257,7 +257,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
   padding: 0 var(--space-2);
+}
+
+.railActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
 }
 
 .railTitle {
@@ -282,6 +291,11 @@
 
 .railAdd:hover {
   color: var(--accent);
+}
+
+.railAdd[aria-pressed='true'] {
+  color: var(--accent-ink);
+  background: var(--accent-soft);
 }
 
 .railEmpty {

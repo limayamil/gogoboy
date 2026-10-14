@@ -28,6 +28,7 @@ import {
 } from '../components/Icons'
 import { celebrateFromPointer, shouldCelebrateChecked } from '../lib/confetti'
 import { formatTodayHeading } from '../lib/dates'
+import { tasksForHomeRail } from '../lib/home-rail'
 import { useColorOf } from '../lib/palette'
 import { isExpiredCompleted } from '../shared/expiry'
 import { useAppState, useReorderToday, useUpdateSubtask, useUpdateTask } from '../lib/store'
@@ -38,6 +39,13 @@ import styles from './TodayView.module.css'
 const TODAY_ZONE = 'zona-hoy'
 const RAIL_ZONE = 'zona-listas'
 
+/** Preferencia de pantalla del rail: no va al servidor ni a otras vistas. */
+const HIDE_COMPLETED_ON_HOME_KEY = 'gogoboy.hideCompletedOnHome'
+
+function readHideCompletedOnHome(): boolean {
+  return localStorage.getItem(HIDE_COMPLETED_ON_HOME_KEY) === 'true'
+}
+
 export function TodayView() {
   const { data, isPending, error } = useAppState()
   const { openTask, openCategory } = useModals()
@@ -46,6 +54,7 @@ export function TodayView() {
 
   const colorOf = useColorOf()
   const [showHidden, setShowHidden] = useState(false)
+  const [hideCompleted, setHideCompleted] = useState(readHideCompletedOnHome)
   const [dragging, setDragging] = useState<Task | null>(null)
 
   // Un drag recien arranca despues de 6px: asi un click simple sigue abriendo el modal.
@@ -126,6 +135,12 @@ export function TodayView() {
           categories={categories}
           tasks={listed}
           uncategorized={uncategorized}
+          hideCompleted={hideCompleted}
+          onToggleHideCompleted={() => {
+            const next = !hideCompleted
+            localStorage.setItem(HIDE_COMPLETED_ON_HOME_KEY, String(next))
+            setHideCompleted(next)
+          }}
           onAddCategory={() => openCategory(null)}
           onAddTask={(categoryId) => openTask({ taskId: null, defaults: { categoryId } })}
         />
@@ -342,6 +357,8 @@ function Rail({
   categories,
   tasks,
   uncategorized,
+  hideCompleted,
+  onToggleHideCompleted,
   onAddCategory,
   onAddTask,
 }: {
@@ -350,19 +367,36 @@ function Rail({
   categories: Category[]
   tasks: Task[]
   uncategorized: Task[]
+  hideCompleted: boolean
+  onToggleHideCompleted: () => void
   onAddCategory: () => void
   onAddTask: (categoryId: string | null) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: RAIL_ZONE })
+  const visibleUncategorized = tasksForHomeRail(uncategorized, hideCompleted)
+  const hideLabel = hideCompleted ? 'Ver tareas hechas' : 'Ocultar tareas hechas'
 
   return (
     <aside ref={setNodeRef} className={`${styles.rail} ${isOver ? styles.railOver : ''}`}>
       <header className={styles.railHeader}>
         <h2 className={styles.railTitle}>Listas</h2>
-        <button type="button" className={styles.railAdd} onClick={onAddCategory}>
-          <IconPlus size={15} />
-          Categoría
-        </button>
+        <div className={styles.railActions}>
+          <button
+            type="button"
+            className={styles.railAdd}
+            aria-pressed={hideCompleted}
+            aria-label={hideLabel}
+            title={hideLabel}
+            onClick={onToggleHideCompleted}
+          >
+            {hideCompleted ? <IconEye size={15} /> : <IconEyeOff size={15} />}
+            {hideCompleted ? 'Ver hechas' : 'Ocultar hechas'}
+          </button>
+          <button type="button" className={styles.railAdd} onClick={onAddCategory}>
+            <IconPlus size={15} />
+            Categoría
+          </button>
+        </div>
       </header>
 
       {ready && categories.length === 0 && uncategorized.length === 0 ? (
@@ -372,21 +406,28 @@ function Rail({
         </p>
       ) : null}
 
-      {categories.map((category) => (
-        <CategoryGroup
-          key={category.id}
-          name={category.name}
-          colorKey={category.colorKey}
-          tasks={tasks.filter((task) => task.categoryId === category.id)}
-          onAddTask={() => onAddTask(category.id)}
-        />
-      ))}
+      {categories.map((category) => {
+        const visible = tasksForHomeRail(
+          tasks.filter((task) => task.categoryId === category.id),
+          hideCompleted,
+        )
+        if (!visible) return null
+        return (
+          <CategoryGroup
+            key={category.id}
+            name={category.name}
+            colorKey={category.colorKey}
+            tasks={visible}
+            onAddTask={() => onAddTask(category.id)}
+          />
+        )
+      })}
 
-      {uncategorized.length > 0 ? (
+      {visibleUncategorized && visibleUncategorized.length > 0 ? (
         <CategoryGroup
           name="Sin categoría"
           colorKey={null}
-          tasks={uncategorized}
+          tasks={visibleUncategorized}
           onAddTask={() => onAddTask(null)}
         />
       ) : null}

@@ -3,12 +3,14 @@ import { useQuery } from '@tanstack/react-query'
 import { Modal } from './Modal'
 import { RichTextEditor } from './RichTextEditor'
 import {
+  IconCalendar,
   IconChevronDown,
   IconClose,
   IconFile,
   IconImage,
   IconLink,
   IconPlus,
+  IconSignalBars,
   IconSpinner,
   IconSun,
   IconTrash,
@@ -18,6 +20,16 @@ import { api } from '../lib/api'
 import { addDays, formatShortDate, toDateKey, todayKey } from '../lib/dates'
 import { compressImage } from '../lib/image'
 import { useColorOf } from '../lib/palette'
+import {
+  bumpCategoryUsage,
+  collapsedCategories,
+  COLLAPSED_CATEGORY_LIMIT,
+  rankCategoriesByUsage,
+  readCategoryUsage,
+  UNCATEGORIZED_USAGE_KEY,
+  usageKeyForCategory,
+  writeCategoryUsage,
+} from '../lib/category-usage'
 import { celebrateFromPointer, shouldCelebrateChecked, shouldCelebrateStatus } from '../lib/confetti'
 import { errorMessage, toastError, toastUndo } from '../lib/toast'
 import { isEmptyRichText, serializeRichText } from '../lib/rich-text'
@@ -33,7 +45,15 @@ import {
   useUpdateSubtask,
   useUpdateTask,
 } from '../lib/store'
-import { STATUSES, URGENCIES, type Status, type Subtask, type TaskLink, type Urgency } from '../shared/types'
+import {
+  STATUSES,
+  URGENCIES,
+  type Category,
+  type Status,
+  type Subtask,
+  type TaskLink,
+  type Urgency,
+} from '../shared/types'
 import styles from './TaskModal.module.css'
 
 export interface TaskModalRequest {
@@ -43,6 +63,7 @@ export interface TaskModalRequest {
 }
 
 const URGENCY_LABEL: Record<Urgency, string> = { baja: 'Baja', media: 'Media', alta: 'Alta' }
+const URGENCY_BARS: Record<Urgency, 1 | 2 | 3> = { baja: 1, media: 2, alta: 3 }
 const STATUS_LABEL: Record<Status, string> = {
   pendiente: 'Pendiente',
   en_progreso: 'En progreso',
@@ -75,6 +96,16 @@ interface DraftLink {
   key: string
   url: string
   title: string | null
+}
+
+interface CategoryChoice {
+  id: string
+  name: string
+  colorKey: string | null
+}
+
+function toCategoryChoice(category: Category): CategoryChoice {
+  return { id: category.id, name: category.name, colorKey: category.colorKey }
 }
 
 const uid = () => Math.random().toString(36).slice(2)
@@ -180,6 +211,8 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [categoryUsage, setCategoryUsage] = useState(readCategoryUsage)
+  const [categoriesOpen, setCategoriesOpen] = useState(false)
 
   const fileInput = useRef<HTMLInputElement>(null)
   const dragDepth = useRef(0)
@@ -189,6 +222,31 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }))
+
+  // El orden de hoy es Sin categoría y después la posición de la base. El conteo
+  // solo sube acá: un default al abrir el modal no es una elección.
+  const categoryChoices = useMemo(() => {
+    const uncategorized: CategoryChoice = {
+      id: UNCATEGORIZED_USAGE_KEY,
+      name: 'Sin categoría',
+      colorKey: null,
+    }
+    return [uncategorized, ...categories.map(toCategoryChoice)]
+  }, [categories])
+
+  const visibleCategories = useMemo(() => {
+    const selected = usageKeyForCategory(form.categoryId)
+    return categoriesOpen
+      ? rankCategoriesByUsage(categoryChoices, categoryUsage)
+      : collapsedCategories(categoryChoices, categoryUsage, selected)
+  }, [categoriesOpen, categoryChoices, categoryUsage, form.categoryId])
+
+  const selectCategory = (categoryId: string | null) => {
+    set('categoryId', categoryId)
+    const next = bumpCategoryUsage(readCategoryUsage(), usageKeyForCategory(categoryId))
+    writeCategoryUsage(next)
+    setCategoryUsage(next)
+  }
 
   const subtasks = useMemo(() => task?.subtasks ?? [], [task])
   const savedLinks = useMemo(() => task?.links ?? [], [task])
@@ -670,121 +728,143 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
 
         <div className={styles.group}>
           <span className={styles.label}>Categoría</span>
-          <div className={styles.chips} role="radiogroup" aria-label="Categoría">
-            <button
-              type="button"
-              className={`${styles.chip} ${form.categoryId === null ? styles.chipOn : ''}`}
-              onClick={() => set('categoryId', null)}
-              aria-checked={form.categoryId === null}
-              role="radio"
+          <div className={styles.categoryPicker}>
+            <div
+              className={`${styles.chips} ${categoriesOpen ? '' : styles.chipsNowrap}`}
+              role="radiogroup"
+              aria-label="Categoría"
             >
-              Sin categoría
-            </button>
-            {categories.map((category) => {
-              const color = colorOf(category.colorKey)
-              const active = form.categoryId === category.id
-              return (
-                <button
-                  key={category.id}
-                  type="button"
-                  className={`${styles.chip} ${active ? styles.chipOn : ''}`}
-                  role="radio"
-                  aria-checked={active}
-                  style={
-                    active
-                      ? { background: color.bg, color: color.ink, borderColor: color.dot }
-                      : undefined
-                  }
-                  onClick={() => set('categoryId', category.id)}
-                >
-                  <span className={styles.dot} style={{ background: color.dot }} />
-                  {category.name}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        <div className={styles.group}>
-          <span className={styles.label}>Urgencia</span>
-          <div className={styles.segment} role="radiogroup" aria-label="Urgencia">
-            {URGENCIES.map((level) => (
-              <button
-                key={level}
-                type="button"
-                role="radio"
-                aria-checked={form.urgency === level}
-                className={`${styles.segmentItem} ${form.urgency === level ? styles.segmentOn : ''}`}
-                style={
-                  form.urgency === level
-                    ? {
-                        background: `var(--urgency-${level})`,
-                        // Blanco sobre el amarillo de "media" da un contraste ilegible.
-                        color: level === 'media' ? '#4a3a10' : '#fff',
-                      }
-                    : undefined
-                }
-                onClick={() => set('urgency', level)}
-              >
-                {URGENCY_LABEL[level]}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className={styles.group}>
-          <span className={styles.label}>Fecha límite</span>
-          <div className={styles.chips} role="radiogroup" aria-label="Fecha límite">
-            {presets.map((preset) => {
-              const active = form.deadline === preset.value
-              return (
-                <button
-                  key={preset.key}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  className={`${styles.chip} ${active ? styles.chipOn : ''}`}
-                  onClick={() => {
-                    set('deadline', active ? '' : preset.value)
-                    setShowCalendar(false)
-                  }}
-                >
-                  {preset.label}
-                </button>
-              )
-            })}
-            <button
-              type="button"
-              className={`${styles.chip} ${customDate ? styles.chipOn : ''}`}
-              aria-expanded={showCalendar}
-              onClick={() => setShowCalendar((value) => !value)}
-            >
-              <IconChevronDown size={14} />
-              {customDate ? formatShortDate(form.deadline) : 'Fecha…'}
-            </button>
-            {form.deadline ? (
+              {visibleCategories.map((choice) => {
+                const active = usageKeyForCategory(form.categoryId) === choice.id
+                const color = choice.colorKey ? colorOf(choice.colorKey) : null
+                return (
+                  <button
+                    key={choice.id || 'sin-categoria'}
+                    type="button"
+                    className={`${styles.chip} ${active ? styles.chipOn : ''}`}
+                    role="radio"
+                    aria-checked={active}
+                    style={
+                      active && color
+                        ? { background: color.bg, color: color.ink, borderColor: color.dot }
+                        : undefined
+                    }
+                    onClick={() =>
+                      selectCategory(choice.id === UNCATEGORIZED_USAGE_KEY ? null : choice.id)
+                    }
+                  >
+                    {color ? <span className={styles.dot} style={{ background: color.dot }} /> : null}
+                    {choice.name}
+                  </button>
+                )
+              })}
+            </div>
+            {categoryChoices.length > COLLAPSED_CATEGORY_LIMIT ? (
               <button
                 type="button"
-                className={styles.chipClear}
-                aria-label="Sacar la fecha límite"
-                onClick={() => {
-                  set('deadline', '')
-                  setShowCalendar(false)
-                }}
+                className={styles.categoryToggle}
+                aria-expanded={categoriesOpen}
+                aria-label={categoriesOpen ? 'Ver menos' : 'Ver todas las categorías'}
+                onClick={() => setCategoriesOpen((open) => !open)}
               >
-                <IconClose size={13} />
+                <IconChevronDown size={16} className={categoriesOpen ? styles.chevUp : undefined} />
               </button>
             ) : null}
           </div>
-          {showCalendar ? (
-            <input
-              type="date"
-              className={styles.input}
-              value={form.deadline ?? ''}
-              aria-label="Elegir fecha"
-              onChange={(e) => set('deadline', e.target.value)}
-            />
-          ) : null}
+        </div>
+
+        <div className={styles.metaRow}>
+          <div className={styles.group}>
+            <span className={styles.label}>Urgencia</span>
+            <div
+              className={`${styles.segment} ${styles.segmentIcons}`}
+              role="radiogroup"
+              aria-label="Urgencia"
+            >
+              {URGENCIES.map((level) => (
+                <button
+                  key={level}
+                  type="button"
+                  role="radio"
+                  aria-checked={form.urgency === level}
+                  aria-label={URGENCY_LABEL[level]}
+                  className={`${styles.segmentItem} ${form.urgency === level ? styles.segmentOn : ''}`}
+                  style={
+                    form.urgency === level
+                      ? {
+                          background: `var(--urgency-${level})`,
+                          // Blanco sobre el amarillo de "media" da un contraste ilegible.
+                          color: level === 'media' ? '#4a3a10' : '#fff',
+                        }
+                      : undefined
+                  }
+                  onClick={() => set('urgency', level)}
+                >
+                  <IconSignalBars bars={URGENCY_BARS[level]} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={`${styles.group} ${styles.metaDate}`}>
+            <span className={styles.label}>Fecha límite</span>
+            <div
+              className={`${styles.chips} ${styles.chipsNowrap}`}
+              role="radiogroup"
+              aria-label="Fecha límite"
+            >
+              {presets.map((preset) => {
+                const active = form.deadline === preset.value
+                return (
+                  <button
+                    key={preset.key}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    className={`${styles.chip} ${active ? styles.chipOn : ''}`}
+                    onClick={() => {
+                      set('deadline', active ? '' : preset.value)
+                      setShowCalendar(false)
+                    }}
+                  >
+                    {preset.label}
+                  </button>
+                )
+              })}
+              <button
+                type="button"
+                className={`${styles.chip} ${styles.chipIcon} ${customDate ? styles.chipOn : ''}`}
+                aria-expanded={showCalendar}
+                aria-label={customDate ? `Fecha ${formatShortDate(form.deadline)}` : 'Elegir fecha'}
+                title={customDate ? formatShortDate(form.deadline) : undefined}
+                onClick={() => setShowCalendar((value) => !value)}
+              >
+                <IconCalendar size={16} />
+              </button>
+              {form.deadline ? (
+                <button
+                  type="button"
+                  className={styles.chipClear}
+                  aria-label="Sacar la fecha límite"
+                  onClick={() => {
+                    set('deadline', '')
+                    setShowCalendar(false)
+                  }}
+                >
+                  <IconClose size={13} />
+                </button>
+              ) : null}
+            </div>
+            {showCalendar ? (
+              <input
+                type="date"
+                className={styles.input}
+                value={form.deadline ?? ''}
+                aria-label="Elegir fecha"
+                onChange={(e) => set('deadline', e.target.value)}
+              />
+            ) : null}
+          </div>
         </div>
 
         <button

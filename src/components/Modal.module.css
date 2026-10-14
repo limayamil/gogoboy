@@ -53,6 +53,8 @@
 .body {
   flex: 1;
   overflow-y: auto;
+  /* Sin esto el ítem flex no se achica y una fila de chips desborda el diálogo. */
+  min-width: 0;
   padding: 0 var(--space-5) var(--space-5);
   display: flex;
   flex-direction: column;

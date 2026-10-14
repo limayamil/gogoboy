@@ -35,6 +35,19 @@ export const IconCalendar = ({ size = 20, className }: Props) => (
   </svg>
 )
 
+/** Misma caja para 1, 2 o 3 barras: el segmento no cambia de ancho al elegir. */
+export const IconSignalBars = ({
+  bars,
+  size = 18,
+  className,
+}: Props & { bars: 1 | 2 | 3 }) => (
+  <svg {...base(size)} className={className} aria-hidden="true">
+    <path d="M6 19v-5" />
+    {bars > 1 ? <path d="M12 19V9" /> : null}
+    {bars > 2 ? <path d="M18 19V4" /> : null}
+  </svg>
+)
+
 export const IconPlus = ({ size = 20, className }: Props) => (
   <svg {...base(size)} className={className} aria-hidden="true">
     <path d="M12 5v14M5 12h14" />

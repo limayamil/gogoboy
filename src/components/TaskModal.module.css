@@ -5,12 +5,14 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  min-width: 0;
 }
 
 .group {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  min-width: 0;
 }
 
 /* Minuscula y suave: el modal tenia nueve etiquetas en mayuscula y era puro ruido. */
@@ -81,6 +83,47 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+/* Colapsado: una sola fila. El scroll aparece solo si cuatro nombres no entran. */
+.chipsNowrap {
+  flex-wrap: nowrap;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.chipsNowrap .chip {
+  flex: none;
+  white-space: nowrap;
+}
+
+.categoryPicker {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.categoryToggle {
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 22px;
+  border-radius: var(--r-pill);
+  color: var(--ink-faint);
+}
+
+.categoryToggle:hover {
+  color: var(--ink-soft);
+  background: var(--surface-2);
+}
+
+.categoryToggle svg {
+  transition: transform var(--dur) var(--ease-out);
 }
 
 .chip {
@@ -154,6 +197,35 @@
 .segmentOn {
   box-shadow: var(--shadow-sm);
   color: #fff;
+}
+
+/* Urgencia y fecha van juntas: en el ancho del modal no tienen que partirse. */
+.metaRow {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.metaDate {
+  flex: 1;
+  min-width: 0;
+}
+
+.segmentIcons {
+  flex-wrap: nowrap;
+}
+
+.segmentIcons .segmentItem {
+  display: grid;
+  place-items: center;
+  padding-inline: 11px;
+}
+
+.chipIcon {
+  justify-content: center;
+  padding-inline: 9px;
 }
 
 /* --- Agregar a Hoy --------------------------------------------------------- */
@@ -747,8 +819,24 @@
     padding: 11px 15px;
   }
 
+  .categoryToggle {
+    width: 44px;
+    height: 44px;
+  }
+
   .segmentItem {
     padding: 13px 17px;
+  }
+
+  .segmentIcons .segmentItem {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  .chipIcon {
+    width: 44px;
+    padding-inline: 0;
   }
 
   .chipClear {

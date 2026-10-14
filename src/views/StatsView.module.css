@@ -1,0 +1,359 @@
+.page {
+  max-width: 860px;
+  min-width: 0;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: var(--space-5);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: clamp(26px, 3.2vw, 36px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.title svg {
+  color: var(--accent);
+}
+
+.subtitle {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-faint);
+}
+
+.stack,
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.card {
+  padding: var(--space-5);
+  border-radius: var(--r-xl);
+  background-color: var(--surface);
+  background-image: var(--grad-wash);
+  box-shadow: var(--shadow-card);
+}
+
+.sectionTitle {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.hero {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: var(--space-3) 0 var(--space-5);
+}
+
+.heroNumber {
+  font-size: clamp(44px, 6vw, 64px);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 0.9;
+  color: var(--ink);
+}
+
+.heroLabel {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.subhead {
+  margin-bottom: var(--space-3);
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.bars,
+.weeks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.barRow,
+.weekRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.weekButton {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 4px;
+  border-radius: var(--r-md);
+  text-align: left;
+  color: inherit;
+  transition:
+    background var(--dur-fast) ease,
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.weekButton:hover,
+.weekButton:focus-visible {
+  background: var(--surface-2);
+}
+
+.weekButton:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
+.weekButton .weekMeta {
+  align-items: center;
+}
+
+.barMeta,
+.weekMeta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.barName {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.barCount,
+.weekCounts {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-faint);
+}
+
+.weekCounts svg {
+  color: var(--accent-2);
+}
+
+.barTrack {
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--surface-sunken);
+}
+
+.barFill,
+.weekFill {
+  display: block;
+  height: 100%;
+  min-width: 8px;
+  border-radius: inherit;
+}
+
+.weekFill {
+  background: var(--accent-2);
+}
+
+.highlights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.chipCard {
+  padding: var(--space-4);
+  border-radius: var(--r-lg);
+  background-color: var(--surface);
+  background-image: var(--grad-wash);
+  box-shadow: var(--shadow-card);
+}
+
+.chipButton {
+  text-align: left;
+  color: inherit;
+  min-height: 44px;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur) ease;
+}
+
+.chipButton:hover,
+.chipButton:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.chipButton:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
+.chipLabel {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.chipValue {
+  margin-top: 6px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
+}
+
+.chipHint {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.weekRange {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.nowBadge {
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--accent-2-soft);
+  color: var(--accent-2);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 8px 2px 6px;
+  border-radius: var(--r-sm);
+  background: var(--surface-sunken);
+}
+
+.dayCount {
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.dayTrack {
+  display: flex;
+  align-items: flex-end;
+  width: 8px;
+  height: 36px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--accent-2) 18%, var(--surface));
+}
+
+.dayFill {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  border-radius: inherit;
+  background: var(--accent-2);
+}
+
+.dayName {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-faint);
+}
+
+.weeksEmpty {
+  margin-top: var(--space-3);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-faint);
+}
+
+.empty {
+  padding: var(--space-6);
+  border-radius: var(--r-xl);
+  background-color: var(--surface);
+  background-image: var(--grad-wash);
+  text-align: center;
+  box-shadow: var(--shadow-card);
+  animation: fade-rise var(--dur-slow) var(--ease-out) both;
+}
+
+.emptyIllustration {
+  display: block;
+  width: min(280px, 78%);
+  height: auto;
+  margin: -18px auto -10px;
+  filter: saturate(0.92);
+}
+
+.emptyTitle {
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
+.emptyText {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--ink-faint);
+}
+
+@media (max-width: 720px) {
+  .card {
+    padding: var(--space-4);
+  }
+
+  .highlights {
+    grid-template-columns: 1fr;
+  }
+
+  .barMeta,
+  .weekMeta {
+    flex-wrap: wrap;
+    gap: 4px var(--space-3);
+  }
+}

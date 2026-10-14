@@ -306,10 +306,10 @@
   text-align: center;
 }
 
-/* Con cinco pestañas el texto no entra en el centro del header antes que el
+/* Con seis pestañas el texto no entra en el centro del header antes que el
    layout mobile: se esconden las labels y quedan los iconos. El badge no: si
    no, la cantidad de la bandeja desaparece junto con la palabra. */
-@media (max-width: 1280px) {
+@media (max-width: 1480px) {
   .tab {
     position: relative;
     padding: 8px 12px;

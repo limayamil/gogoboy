@@ -171,6 +171,13 @@ export const IconNote = ({ size = 20, className }: Props) => (
   </svg>
 )
 
+export const IconChart = ({ size = 20, className }: Props) => (
+  <svg {...base(size)} className={className} aria-hidden="true">
+    <path d="M4 19V5M4 19h16" />
+    <path d="M8 16v-5M12 16V8M16 16v-3" />
+  </svg>
+)
+
 export const IconSearch = ({ size = 18, className }: Props) => (
   <svg {...base(size)} className={className} aria-hidden="true">
     <circle cx="11" cy="11" r="7" />

@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   bumpCategoryUsage,
   categoryUsageSetCookie,
+  chipsThatFit,
   collapsedCategories,
-  COLLAPSED_CATEGORY_LIMIT,
+  COLLAPSED_CATEGORY_LINES,
   parseCategoryUsage,
   rankCategoriesByUsage,
   UNCATEGORIZED_USAGE_KEY,
@@ -66,47 +67,76 @@ describe('rankCategoriesByUsage', () => {
   })
 })
 
+describe('chipsThatFit', () => {
+  it('llena hasta dos filas y deja afuera lo que no entra entero', () => {
+    expect(COLLAPSED_CATEGORY_LINES).toBe(2)
+    // 40 + 10 + 40 = 90 entra; el tercero no. Dos filas → cuatro chips.
+    expect(chipsThatFit([40, 40, 40, 40, 40], 100, 10)).toBe(4)
+    expect(chipsThatFit([40, 40], 100, 10)).toBe(2)
+    expect(chipsThatFit([], 100, 10)).toBe(0)
+  })
+
+  it('un chip más ancho que la fila ocupa esa fila y no se descarta', () => {
+    expect(chipsThatFit([180, 40, 40, 40], 100, 10)).toBe(3)
+  })
+
+  it('sin ancho conocido no esconde chips', () => {
+    expect(chipsThatFit([40, 40, 40], 0, 10)).toBe(3)
+  })
+})
+
 describe('collapsedCategories', () => {
   const today = choices(['', 'dona', 'kinetic', 'jetsons', 'igor', 'pluto'])
+  // Dos chips por fila: el colapsado muestra cuatro y el resto queda afuera.
+  const widths = today.map(() => 40)
+  const fit = (selected: string, usage: Record<string, number> = {}) =>
+    collapsedCategories(today, usage, selected, widths, 100, 10)
 
-  it('sin cookie muestra las primeras cuatro del orden de hoy', () => {
-    expect(ids(collapsedCategories(today, {}, ''))).toEqual(['', 'dona', 'kinetic', 'jetsons'])
-    expect(COLLAPSED_CATEGORY_LIMIT).toBe(4)
+  it('sin cookie muestra las primeras que entran, en el orden de hoy', () => {
+    expect(ids(fit(''))).toEqual(['', 'dona', 'kinetic', 'jetsons'])
   })
 
-  it('si hay cuatro o menos, muestra todas ya rankeadas', () => {
+  it('si todas entran en dos filas, muestra todas ya rankeadas', () => {
     const few = choices(['', 'dona', 'kinetic'])
-    expect(ids(collapsedCategories(few, { kinetic: 2 }, ''))).toEqual(['kinetic', '', 'dona'])
-  })
-
-  it('deja la seleccionada en la fila si no entra en el top y suelta la menos usada', () => {
-    const usage = { '': 5, dona: 4, kinetic: 3, jetsons: 2, igor: 1 }
-    expect(ids(collapsedCategories(today, usage, 'pluto'))).toEqual(['', 'dona', 'kinetic', 'pluto'])
-  })
-
-  it('reordena la fila para que la seleccionada no quede antes de una más usada', () => {
-    const usage = { '': 10, dona: 8, kinetic: 3, jetsons: 3, pluto: 4 }
-    expect(ids(collapsedCategories(today, usage, 'igor'))).toEqual(['', 'dona', 'pluto', 'igor'])
-  })
-
-  it('no toca el top si la seleccionada ya está', () => {
-    const usage = { kinetic: 9, '': 1 }
-    expect(ids(collapsedCategories(today, usage, 'kinetic'))).toEqual(['kinetic', '', 'dona', 'jetsons'])
-  })
-
-  it('ignora una seleccionada que no existe', () => {
-    expect(ids(collapsedCategories(today, { igor: 6 }, 'fantasma'))).toEqual([
-      'igor',
+    expect(ids(collapsedCategories(few, { kinetic: 2 }, '', [40, 40, 40], 100, 10))).toEqual([
+      'kinetic',
       '',
       'dona',
-      'kinetic',
     ])
   })
 
-  it('respeta un límite chico con el mismo criterio de empate', () => {
-    const row = choices(['a', 'b', 'c', 'd'])
-    expect(ids(collapsedCategories(row, {}, 'd', 2))).toEqual(['a', 'd'])
-    expect(ids(collapsedCategories(row, { c: 2, d: 2, b: 1 }, 'a', 2))).toEqual(['c', 'a'])
+  it('no mete en la fila un chip que no entra entero', () => {
+    expect(chipsThatFit([50, 80], 100, 10, 1)).toBe(1)
+    const row = choices(['corta', 'larga'])
+    expect(ids(collapsedCategories(row, {}, '', [50, 80], 100, 10, 1))).toEqual(['corta'])
+  })
+
+  it('deja la seleccionada si no entra en lo visible y suelta la menos usada', () => {
+    const usage = { '': 5, dona: 4, kinetic: 3, jetsons: 2, igor: 1 }
+    expect(ids(fit('pluto', usage))).toEqual(['', 'dona', 'kinetic', 'pluto'])
+  })
+
+  it('reordena para que la seleccionada no quede antes de una más usada', () => {
+    const usage = { '': 10, dona: 8, kinetic: 3, jetsons: 3, pluto: 4 }
+    expect(ids(fit('igor', usage))).toEqual(['', 'dona', 'pluto', 'igor'])
+  })
+
+  it('no toca el grupo si la seleccionada ya entra', () => {
+    const usage = { kinetic: 9, '': 1 }
+    expect(ids(fit('kinetic', usage))).toEqual(['kinetic', '', 'dona', 'jetsons'])
+  })
+
+  it('ignora una seleccionada que no existe', () => {
+    expect(ids(fit('fantasma', { igor: 6 }))).toEqual(['igor', '', 'dona', 'kinetic'])
+  })
+
+  it('un nombre más ancho que la fila igual se muestra entero', () => {
+    const row = choices(['enorme', 'a', 'b'])
+    expect(ids(collapsedCategories(row, {}, '', [240, 40, 40], 100, 10))).toEqual([
+      'enorme',
+      'a',
+      'b',
+    ])
   })
 })
 

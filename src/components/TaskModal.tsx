@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Modal } from './Modal'
 import { RichTextEditor } from './RichTextEditor'
@@ -23,7 +23,6 @@ import { useColorOf } from '../lib/palette'
 import {
   bumpCategoryUsage,
   collapsedCategories,
-  COLLAPSED_CATEGORY_LIMIT,
   rankCategoriesByUsage,
   readCategoryUsage,
   UNCATEGORIZED_USAGE_KEY,
@@ -106,6 +105,19 @@ interface CategoryChoice {
 
 function toCategoryChoice(category: Category): CategoryChoice {
   return { id: category.id, name: category.name, colorKey: category.colorKey }
+}
+
+/** El texto «Sin categoría» ocupaba un chip entero. La cruz dice lo mismo y cabe en el hueco. */
+function CategoryChipBody({ choice, dot }: { choice: CategoryChoice; dot?: string }) {
+  if (choice.id === UNCATEGORIZED_USAGE_KEY) return <IconClose size={16} />
+  return (
+    <>
+      {choice.colorKey ? (
+        <span className={styles.dot} style={dot ? { background: dot } : undefined} />
+      ) : null}
+      {choice.name}
+    </>
+  )
 }
 
 const uid = () => Math.random().toString(36).slice(2)
@@ -234,12 +246,62 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
     return [uncategorized, ...categories.map(toCategoryChoice)]
   }, [categories])
 
-  const visibleCategories = useMemo(() => {
-    const selected = usageKeyForCategory(form.categoryId)
-    return categoriesOpen
-      ? rankCategoriesByUsage(categoryChoices, categoryUsage)
-      : collapsedCategories(categoryChoices, categoryUsage, selected)
-  }, [categoriesOpen, categoryChoices, categoryUsage, form.categoryId])
+  const rankedCategories = useMemo(
+    () => rankCategoriesByUsage(categoryChoices, categoryUsage),
+    [categoryChoices, categoryUsage],
+  )
+  const pickerRef = useRef<HTMLDivElement>(null)
+  // null hasta medir: el primer paint ya muestra solo lo que entra en dos filas.
+  const [collapsedIds, setCollapsedIds] = useState<string[] | null>(null)
+
+  useLayoutEffect(() => {
+    const root = pickerRef.current
+    if (!root) return
+
+    const measure = () => {
+      const row = root.querySelector<HTMLElement>('[data-category-row]')
+      const probes = [...root.querySelectorAll<HTMLElement>('[data-category-measure]')]
+      if (!row || probes.length !== rankedCategories.length) return
+      const gapValue = getComputedStyle(row).columnGap
+      const gap = Number.parseFloat(gapValue) || 0
+      const widthById = new Map(
+        rankedCategories.map((choice, index) => [choice.id, probes[index].getBoundingClientRect().width]),
+      )
+      const widths = categoryChoices.map((choice) => widthById.get(choice.id) ?? 0)
+      const visible = collapsedCategories(
+        categoryChoices,
+        categoryUsage,
+        usageKeyForCategory(form.categoryId),
+        widths,
+        row.clientWidth,
+        gap,
+      )
+      const ids = visible.map((choice) => choice.id)
+      setCollapsedIds((prev) =>
+        prev && prev.length === ids.length && prev.every((id, index) => id === ids[index]) ? prev : ids,
+      )
+    }
+
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(root)
+    let cancelled = false
+    document.fonts?.ready.then(() => {
+      if (!cancelled) measure()
+    })
+    return () => {
+      cancelled = true
+      observer.disconnect()
+    }
+  }, [rankedCategories, categoryChoices, categoryUsage, form.categoryId])
+
+  // Antes de medir no pintamos el ranking entero: una fila vacía ya tiene el ancho real.
+  const visibleCategories = categoriesOpen
+    ? rankedCategories
+    : collapsedIds === null
+      ? []
+      : rankedCategories.filter((choice) => collapsedIds.includes(choice.id))
+  const categoriesHidden = collapsedIds !== null && collapsedIds.length < rankedCategories.length
 
   const selectCategory = (categoryId: string | null) => {
     set('categoryId', categoryId)
@@ -728,22 +790,25 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
 
         <div className={styles.group}>
           <span className={styles.label}>Categoría</span>
-          <div className={styles.categoryPicker}>
+          <div className={styles.categoryPicker} ref={pickerRef}>
             <div
-              className={`${styles.chips} ${categoriesOpen ? '' : styles.chipsNowrap}`}
+              data-category-row
+              className={categoriesOpen ? styles.chips : styles.categoryCollapsed}
               role="radiogroup"
               aria-label="Categoría"
             >
               {visibleCategories.map((choice) => {
                 const active = usageKeyForCategory(form.categoryId) === choice.id
+                const uncategorized = choice.id === UNCATEGORIZED_USAGE_KEY
                 const color = choice.colorKey ? colorOf(choice.colorKey) : null
                 return (
                   <button
                     key={choice.id || 'sin-categoria'}
                     type="button"
-                    className={`${styles.chip} ${active ? styles.chipOn : ''}`}
+                    className={`${styles.chip} ${uncategorized ? styles.chipIcon : ''} ${active ? styles.chipOn : ''}`}
                     role="radio"
                     aria-checked={active}
+                    aria-label={uncategorized ? 'Sin categoría' : undefined}
                     style={
                       active && color
                         ? { background: color.bg, color: color.ink, borderColor: color.dot }
@@ -753,13 +818,23 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
                       selectCategory(choice.id === UNCATEGORIZED_USAGE_KEY ? null : choice.id)
                     }
                   >
-                    {color ? <span className={styles.dot} style={{ background: color.dot }} /> : null}
-                    {choice.name}
+                    <CategoryChipBody choice={choice} dot={color?.dot} />
                   </button>
                 )
               })}
             </div>
-            {categoryChoices.length > COLLAPSED_CATEGORY_LIMIT ? (
+            <div className={styles.categoryMeasure} aria-hidden="true">
+              {rankedCategories.map((choice) => (
+                <span
+                  key={choice.id || 'sin-categoria'}
+                  data-category-measure
+                  className={`${styles.chip} ${choice.id === UNCATEGORIZED_USAGE_KEY ? styles.chipIcon : ''}`}
+                >
+                  <CategoryChipBody choice={choice} />
+                </span>
+              ))}
+            </div>
+            {categoriesHidden ? (
               <button
                 type="button"
                 className={styles.categoryToggle}
@@ -867,37 +942,34 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
           </div>
         </div>
 
-        <button
-          type="button"
-          className={`${styles.todayRow} ${form.inToday ? styles.todayRowOn : ''}`}
-          role="switch"
-          aria-checked={form.inToday}
-          onClick={() => set('inToday', !form.inToday)}
-        >
-          <span className={styles.todayIcon}>
-            <IconSun size={19} />
-          </span>
-          <span className={styles.todayText}>
-            <span className={styles.todayTitle}>Agregar a Hoy</span>
-            <span className={styles.todaySub}>Aparece en el panel de Hoy hasta que la ocultes</span>
-          </span>
-          <span className={`${styles.switch} ${form.inToday ? styles.switchOn : ''}`}>
-            <span className={styles.knob} />
-          </span>
-        </button>
-
-        {!isEdit ? (
+        <div className={styles.actionRow}>
           <button
             type="button"
-            className={`${styles.disclosure} ${details ? styles.disclosureOpen : ''}`}
-            aria-expanded={details}
-            onClick={() => setDetails((value) => !value)}
+            className={`${styles.todayRow} ${form.inToday ? styles.todayRowOn : ''}`}
+            role="switch"
+            aria-checked={form.inToday}
+            onClick={() => set('inToday', !form.inToday)}
           >
-            <IconChevronDown size={18} className={details ? styles.chevUp : undefined} />
-            Más detalles
-            {!details && extras > 0 ? <span className={styles.count}>{extras}</span> : null}
+            <IconSun size={16} />
+            Agregar a hoy
+            <span className={`${styles.switch} ${form.inToday ? styles.switchOn : ''}`}>
+              <span className={styles.knob} />
+            </span>
           </button>
-        ) : null}
+
+          {!isEdit ? (
+            <button
+              type="button"
+              className={`${styles.disclosure} ${details ? styles.disclosureOpen : ''}`}
+              aria-expanded={details}
+              onClick={() => setDetails((value) => !value)}
+            >
+              <IconChevronDown size={16} className={details ? styles.chevUp : undefined} />
+              Más detalles
+              {!details && extras > 0 ? <span className={styles.count}>{extras}</span> : null}
+            </button>
+          ) : null}
+        </div>
 
         {details ? (
           <>

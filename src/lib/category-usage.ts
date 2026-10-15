@@ -5,7 +5,11 @@
  */
 export const CATEGORY_USAGE_COOKIE = 'gogoboy.categoryUsage'
 export const UNCATEGORIZED_USAGE_KEY = ''
-export const COLLAPSED_CATEGORY_LIMIT = 4
+/** El colapsado puede ocupar dos filas. Lo que no entra queda detrás del chevron. */
+export const COLLAPSED_CATEGORY_LINES = 2
+
+/** Un pixel de margen: el redondeo del layout no debe mandar un chip a una tercera fila. */
+const FIT_SLACK_PX = 1
 
 /** Sin Max-Age la cookie muere con la sesión y el ranking se olvida al cerrar el navegador. */
 const USAGE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365
@@ -36,22 +40,72 @@ export function rankCategoriesByUsage<T extends { id: string }>(
 }
 
 /**
- * Las `limit` más usadas. Si la seleccionada no entra, ocupa el lugar de la
- * menos usada de esas y el grupo se vuelve a ordenar con la misma regla.
+ * Cuántos anchos entran en `maxLines` filas sin partir un chip.
+ * Un chip más ancho que la fila ocupa la fila entera: el nombre se muestra
+ * completo y no se recorta. Si todavía no hay ancho, no escondemos nada.
+ */
+export function chipsThatFit(
+  widths: readonly number[],
+  containerWidth: number,
+  gap: number,
+  maxLines = COLLAPSED_CATEGORY_LINES,
+): number {
+  if (widths.length === 0) return 0
+  if (!(containerWidth > 0) || maxLines < 1) return widths.length
+  let lines = 1
+  let used = 0
+  let count = 0
+  for (const raw of widths) {
+    const width = Math.min(Math.max(raw, 0), containerWidth)
+    const slot = used === 0 ? width : gap + width
+    if (used + slot <= containerWidth + FIT_SLACK_PX) {
+      used += slot
+      count += 1
+      continue
+    }
+    if (lines >= maxLines) break
+    lines += 1
+    used = width
+    count += 1
+  }
+  return count
+}
+
+/**
+ * Las más usadas que entran en dos filas, nombre entero. Si la seleccionada
+ * no entra, reemplaza a la menos usada del grupo visible y se reordena.
+ * `widths` sigue el orden de `choices`, no el rankeado.
  */
 export function collapsedCategories<T extends { id: string }>(
   choices: readonly T[],
   usage: CategoryUsage,
   selectedId: string,
-  limit = COLLAPSED_CATEGORY_LIMIT,
+  widths: readonly number[],
+  containerWidth: number,
+  gap: number,
+  maxLines = COLLAPSED_CATEGORY_LINES,
 ): T[] {
   const ranked = rankCategoriesByUsage(choices, usage)
-  if (ranked.length <= limit) return ranked
-  const head = ranked.slice(0, limit)
+  if (!(containerWidth > 0)) return ranked
+  const widthById = new Map(choices.map((choice, index) => [choice.id, widths[index] ?? 0]))
+  const widthFor = (items: readonly T[]) => items.map((item) => widthById.get(item.id) ?? 0)
+  const fits = (items: readonly T[]) =>
+    chipsThatFit(widthFor(items), containerWidth, gap, maxLines) === items.length
+
+  const count = chipsThatFit(widthFor(ranked), containerWidth, gap, maxLines)
+  const head = ranked.slice(0, count)
   if (head.some((choice) => choice.id === selectedId)) return head
   const selected = ranked.find((choice) => choice.id === selectedId)
   if (!selected) return head
-  return rankCategoriesByUsage([...head.slice(0, limit - 1), selected], usage)
+
+  let kept = head
+  while (kept.length > 0) {
+    const withoutLast = kept.slice(0, -1)
+    const trial = ranked.filter((choice) => choice === selected || withoutLast.includes(choice))
+    if (fits(trial)) return trial
+    kept = withoutLast
+  }
+  return [selected]
 }
 
 export function parseCategoryUsage(raw: string | null | undefined): CategoryUsage {

@@ -5,12 +5,14 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  min-width: 0;
 }
 
 .group {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  min-width: 0;
 }
 
 /* Minuscula y suave: el modal tenia nueve etiquetas en mayuscula y era puro ruido. */
@@ -81,6 +83,84 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+/* Fecha límite: una sola fila. Si no entra, se desplaza; el texto del preset no se parte. */
+.chipsNowrap {
+  flex-wrap: nowrap;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.chipsNowrap .chip {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* Colapsado: hasta dos filas, con el nombre entero. Lo que no entra va al chevron. */
+.categoryCollapsed {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.categoryPicker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.categoryPicker .chip {
+  flex: none;
+  max-width: 100%;
+  /* Si el nombre es más ancho que la fila, parte. No se corta con puntos suspensivos. */
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.categoryMeasure {
+  position: absolute;
+  left: 0;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+  display: flex;
+  flex-wrap: nowrap;
+  width: max-content;
+  gap: var(--space-2);
+}
+
+.categoryMeasure .chip {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  max-width: none;
+}
+
+.categoryToggle {
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 22px;
+  border-radius: var(--r-pill);
+  color: var(--ink-faint);
+}
+
+.categoryToggle:hover {
+  color: var(--ink-soft);
+  background: var(--surface-2);
+}
+
+.categoryToggle svg {
+  transition: transform var(--dur) var(--ease-out);
 }
 
 .chip {
@@ -156,54 +236,68 @@
   color: #fff;
 }
 
-/* --- Agregar a Hoy --------------------------------------------------------- */
+/* Urgencia y fecha van juntas: en el ancho del modal no tienen que partirse. */
+.metaRow {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.metaDate {
+  flex: 1;
+  min-width: 0;
+}
+
+.segmentIcons {
+  flex-wrap: nowrap;
+}
+
+.segmentIcons .segmentItem {
+  display: grid;
+  place-items: center;
+  padding-inline: 11px;
+}
+
+.chipIcon {
+  justify-content: center;
+  padding-inline: 9px;
+}
+
+/* Hoy y «Más detalles» comparten fila: el interruptor no necesita una tarjeta propia. */
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
 
 .todayRow {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
-  width: 100%;
-  padding: 11px 13px;
-  border-radius: var(--r-sm);
+  gap: var(--space-2);
+  padding: 6px 8px 6px 12px;
+  border-radius: var(--r-pill);
   background: var(--surface-2);
   border: 1.5px solid var(--line);
-  text-align: left;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  font-weight: 700;
+  white-space: nowrap;
   transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease;
+}
+
+.todayRow svg {
+  flex: none;
+  color: var(--accent);
 }
 
 .todayRowOn {
   background: var(--accent-soft);
   border-color: var(--accent);
-}
-
-.todayIcon {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--r-pill);
-  background: var(--surface);
-  color: var(--accent);
-  flex: none;
-}
-
-.todayText {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-}
-
-.todayTitle {
-  font-size: 14.5px;
-  font-weight: 800;
   color: var(--ink);
-}
-
-.todaySub {
-  font-size: 12.5px;
-  color: var(--ink-faint);
-  line-height: 1.3;
 }
 
 .switch {
@@ -237,14 +331,14 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  align-self: flex-start;
-  padding: 11px 16px 11px 14px;
+  padding: 7px 14px 7px 12px;
   border-radius: var(--r-pill);
   color: var(--ink-soft);
   font-size: 13.5px;
   font-weight: 700;
   background: var(--surface-2);
   border: 1.5px solid var(--line);
+  white-space: nowrap;
   transition: color var(--dur-fast) ease, border-color var(--dur-fast) ease;
 }
 
@@ -747,8 +841,24 @@
     padding: 11px 15px;
   }
 
+  .categoryToggle {
+    width: 44px;
+    height: 44px;
+  }
+
   .segmentItem {
     padding: 13px 17px;
+  }
+
+  .segmentIcons .segmentItem {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  .chipIcon {
+    width: 44px;
+    padding-inline: 0;
   }
 
   .chipClear {
@@ -772,8 +882,13 @@
     padding: 12px 16px;
   }
 
+  .todayRow,
   .disclosure {
-    padding: 13px 18px 13px 16px;
+    min-height: 44px;
+  }
+
+  .disclosure {
+    padding: 10px 16px 10px 14px;
   }
 
   .primary,

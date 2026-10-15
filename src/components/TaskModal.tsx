@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Modal } from './Modal'
 import { RichTextEditor } from './RichTextEditor'
 import {
+  IconCalendar,
   IconChevronDown,
   IconClose,
   IconFile,
   IconImage,
   IconLink,
   IconPlus,
+  IconSignalBars,
   IconSpinner,
   IconSun,
   IconTrash,
@@ -18,6 +20,15 @@ import { api } from '../lib/api'
 import { addDays, formatShortDate, toDateKey, todayKey } from '../lib/dates'
 import { compressImage } from '../lib/image'
 import { useColorOf } from '../lib/palette'
+import {
+  bumpCategoryUsage,
+  collapsedCategories,
+  rankCategoriesByUsage,
+  readCategoryUsage,
+  UNCATEGORIZED_USAGE_KEY,
+  usageKeyForCategory,
+  writeCategoryUsage,
+} from '../lib/category-usage'
 import { celebrateFromPointer, shouldCelebrateChecked, shouldCelebrateStatus } from '../lib/confetti'
 import { errorMessage, toastError, toastUndo } from '../lib/toast'
 import { isEmptyRichText, serializeRichText } from '../lib/rich-text'
@@ -33,7 +44,15 @@ import {
   useUpdateSubtask,
   useUpdateTask,
 } from '../lib/store'
-import { STATUSES, URGENCIES, type Status, type Subtask, type TaskLink, type Urgency } from '../shared/types'
+import {
+  STATUSES,
+  URGENCIES,
+  type Category,
+  type Status,
+  type Subtask,
+  type TaskLink,
+  type Urgency,
+} from '../shared/types'
 import styles from './TaskModal.module.css'
 
 export interface TaskModalRequest {
@@ -43,6 +62,7 @@ export interface TaskModalRequest {
 }
 
 const URGENCY_LABEL: Record<Urgency, string> = { baja: 'Baja', media: 'Media', alta: 'Alta' }
+const URGENCY_BARS: Record<Urgency, 1 | 2 | 3> = { baja: 1, media: 2, alta: 3 }
 const STATUS_LABEL: Record<Status, string> = {
   pendiente: 'Pendiente',
   en_progreso: 'En progreso',
@@ -75,6 +95,29 @@ interface DraftLink {
   key: string
   url: string
   title: string | null
+}
+
+interface CategoryChoice {
+  id: string
+  name: string
+  colorKey: string | null
+}
+
+function toCategoryChoice(category: Category): CategoryChoice {
+  return { id: category.id, name: category.name, colorKey: category.colorKey }
+}
+
+/** El texto «Sin categoría» ocupaba un chip entero. La cruz dice lo mismo y cabe en el hueco. */
+function CategoryChipBody({ choice, dot }: { choice: CategoryChoice; dot?: string }) {
+  if (choice.id === UNCATEGORIZED_USAGE_KEY) return <IconClose size={16} />
+  return (
+    <>
+      {choice.colorKey ? (
+        <span className={styles.dot} style={dot ? { background: dot } : undefined} />
+      ) : null}
+      {choice.name}
+    </>
+  )
 }
 
 const uid = () => Math.random().toString(36).slice(2)
@@ -180,6 +223,8 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [categoryUsage, setCategoryUsage] = useState(readCategoryUsage)
+  const [categoriesOpen, setCategoriesOpen] = useState(false)
 
   const fileInput = useRef<HTMLInputElement>(null)
   const dragDepth = useRef(0)
@@ -189,6 +234,81 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }))
+
+  // El orden de hoy es Sin categoría y después la posición de la base. El conteo
+  // solo sube acá: un default al abrir el modal no es una elección.
+  const categoryChoices = useMemo(() => {
+    const uncategorized: CategoryChoice = {
+      id: UNCATEGORIZED_USAGE_KEY,
+      name: 'Sin categoría',
+      colorKey: null,
+    }
+    return [uncategorized, ...categories.map(toCategoryChoice)]
+  }, [categories])
+
+  const rankedCategories = useMemo(
+    () => rankCategoriesByUsage(categoryChoices, categoryUsage),
+    [categoryChoices, categoryUsage],
+  )
+  const pickerRef = useRef<HTMLDivElement>(null)
+  // null hasta medir: el primer paint ya muestra solo lo que entra en dos filas.
+  const [collapsedIds, setCollapsedIds] = useState<string[] | null>(null)
+
+  useLayoutEffect(() => {
+    const root = pickerRef.current
+    if (!root) return
+
+    const measure = () => {
+      const row = root.querySelector<HTMLElement>('[data-category-row]')
+      const probes = [...root.querySelectorAll<HTMLElement>('[data-category-measure]')]
+      if (!row || probes.length !== rankedCategories.length) return
+      const gapValue = getComputedStyle(row).columnGap
+      const gap = Number.parseFloat(gapValue) || 0
+      const widthById = new Map(
+        rankedCategories.map((choice, index) => [choice.id, probes[index].getBoundingClientRect().width]),
+      )
+      const widths = categoryChoices.map((choice) => widthById.get(choice.id) ?? 0)
+      const visible = collapsedCategories(
+        categoryChoices,
+        categoryUsage,
+        usageKeyForCategory(form.categoryId),
+        widths,
+        row.clientWidth,
+        gap,
+      )
+      const ids = visible.map((choice) => choice.id)
+      setCollapsedIds((prev) =>
+        prev && prev.length === ids.length && prev.every((id, index) => id === ids[index]) ? prev : ids,
+      )
+    }
+
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(root)
+    let cancelled = false
+    document.fonts?.ready.then(() => {
+      if (!cancelled) measure()
+    })
+    return () => {
+      cancelled = true
+      observer.disconnect()
+    }
+  }, [rankedCategories, categoryChoices, categoryUsage, form.categoryId])
+
+  // Antes de medir no pintamos el ranking entero: una fila vacía ya tiene el ancho real.
+  const visibleCategories = categoriesOpen
+    ? rankedCategories
+    : collapsedIds === null
+      ? []
+      : rankedCategories.filter((choice) => collapsedIds.includes(choice.id))
+  const categoriesHidden = collapsedIds !== null && collapsedIds.length < rankedCategories.length
+
+  const selectCategory = (categoryId: string | null) => {
+    set('categoryId', categoryId)
+    const next = bumpCategoryUsage(readCategoryUsage(), usageKeyForCategory(categoryId))
+    writeCategoryUsage(next)
+    setCategoryUsage(next)
+  }
 
   const subtasks = useMemo(() => task?.subtasks ?? [], [task])
   const savedLinks = useMemo(() => task?.links ?? [], [task])
@@ -670,154 +790,186 @@ export function TaskModal({ request, onClose }: { request: TaskModalRequest; onC
 
         <div className={styles.group}>
           <span className={styles.label}>Categoría</span>
-          <div className={styles.chips} role="radiogroup" aria-label="Categoría">
-            <button
-              type="button"
-              className={`${styles.chip} ${form.categoryId === null ? styles.chipOn : ''}`}
-              onClick={() => set('categoryId', null)}
-              aria-checked={form.categoryId === null}
-              role="radio"
+          <div className={styles.categoryPicker} ref={pickerRef}>
+            <div
+              data-category-row
+              className={categoriesOpen ? styles.chips : styles.categoryCollapsed}
+              role="radiogroup"
+              aria-label="Categoría"
             >
-              Sin categoría
-            </button>
-            {categories.map((category) => {
-              const color = colorOf(category.colorKey)
-              const active = form.categoryId === category.id
-              return (
-                <button
-                  key={category.id}
-                  type="button"
-                  className={`${styles.chip} ${active ? styles.chipOn : ''}`}
-                  role="radio"
-                  aria-checked={active}
-                  style={
-                    active
-                      ? { background: color.bg, color: color.ink, borderColor: color.dot }
-                      : undefined
-                  }
-                  onClick={() => set('categoryId', category.id)}
+              {visibleCategories.map((choice) => {
+                const active = usageKeyForCategory(form.categoryId) === choice.id
+                const uncategorized = choice.id === UNCATEGORIZED_USAGE_KEY
+                const color = choice.colorKey ? colorOf(choice.colorKey) : null
+                return (
+                  <button
+                    key={choice.id || 'sin-categoria'}
+                    type="button"
+                    className={`${styles.chip} ${uncategorized ? styles.chipIcon : ''} ${active ? styles.chipOn : ''}`}
+                    role="radio"
+                    aria-checked={active}
+                    aria-label={uncategorized ? 'Sin categoría' : undefined}
+                    style={
+                      active && color
+                        ? { background: color.bg, color: color.ink, borderColor: color.dot }
+                        : undefined
+                    }
+                    onClick={() =>
+                      selectCategory(choice.id === UNCATEGORIZED_USAGE_KEY ? null : choice.id)
+                    }
+                  >
+                    <CategoryChipBody choice={choice} dot={color?.dot} />
+                  </button>
+                )
+              })}
+            </div>
+            <div className={styles.categoryMeasure} aria-hidden="true">
+              {rankedCategories.map((choice) => (
+                <span
+                  key={choice.id || 'sin-categoria'}
+                  data-category-measure
+                  className={`${styles.chip} ${choice.id === UNCATEGORIZED_USAGE_KEY ? styles.chipIcon : ''}`}
                 >
-                  <span className={styles.dot} style={{ background: color.dot }} />
-                  {category.name}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        <div className={styles.group}>
-          <span className={styles.label}>Urgencia</span>
-          <div className={styles.segment} role="radiogroup" aria-label="Urgencia">
-            {URGENCIES.map((level) => (
-              <button
-                key={level}
-                type="button"
-                role="radio"
-                aria-checked={form.urgency === level}
-                className={`${styles.segmentItem} ${form.urgency === level ? styles.segmentOn : ''}`}
-                style={
-                  form.urgency === level
-                    ? {
-                        background: `var(--urgency-${level})`,
-                        // Blanco sobre el amarillo de "media" da un contraste ilegible.
-                        color: level === 'media' ? '#4a3a10' : '#fff',
-                      }
-                    : undefined
-                }
-                onClick={() => set('urgency', level)}
-              >
-                {URGENCY_LABEL[level]}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className={styles.group}>
-          <span className={styles.label}>Fecha límite</span>
-          <div className={styles.chips} role="radiogroup" aria-label="Fecha límite">
-            {presets.map((preset) => {
-              const active = form.deadline === preset.value
-              return (
-                <button
-                  key={preset.key}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  className={`${styles.chip} ${active ? styles.chipOn : ''}`}
-                  onClick={() => {
-                    set('deadline', active ? '' : preset.value)
-                    setShowCalendar(false)
-                  }}
-                >
-                  {preset.label}
-                </button>
-              )
-            })}
-            <button
-              type="button"
-              className={`${styles.chip} ${customDate ? styles.chipOn : ''}`}
-              aria-expanded={showCalendar}
-              onClick={() => setShowCalendar((value) => !value)}
-            >
-              <IconChevronDown size={14} />
-              {customDate ? formatShortDate(form.deadline) : 'Fecha…'}
-            </button>
-            {form.deadline ? (
+                  <CategoryChipBody choice={choice} />
+                </span>
+              ))}
+            </div>
+            {categoriesHidden ? (
               <button
                 type="button"
-                className={styles.chipClear}
-                aria-label="Sacar la fecha límite"
-                onClick={() => {
-                  set('deadline', '')
-                  setShowCalendar(false)
-                }}
+                className={styles.categoryToggle}
+                aria-expanded={categoriesOpen}
+                aria-label={categoriesOpen ? 'Ver menos' : 'Ver todas las categorías'}
+                onClick={() => setCategoriesOpen((open) => !open)}
               >
-                <IconClose size={13} />
+                <IconChevronDown size={16} className={categoriesOpen ? styles.chevUp : undefined} />
               </button>
             ) : null}
           </div>
-          {showCalendar ? (
-            <input
-              type="date"
-              className={styles.input}
-              value={form.deadline ?? ''}
-              aria-label="Elegir fecha"
-              onChange={(e) => set('deadline', e.target.value)}
-            />
-          ) : null}
         </div>
 
-        <button
-          type="button"
-          className={`${styles.todayRow} ${form.inToday ? styles.todayRowOn : ''}`}
-          role="switch"
-          aria-checked={form.inToday}
-          onClick={() => set('inToday', !form.inToday)}
-        >
-          <span className={styles.todayIcon}>
-            <IconSun size={19} />
-          </span>
-          <span className={styles.todayText}>
-            <span className={styles.todayTitle}>Agregar a Hoy</span>
-            <span className={styles.todaySub}>Aparece en el panel de Hoy hasta que la ocultes</span>
-          </span>
-          <span className={`${styles.switch} ${form.inToday ? styles.switchOn : ''}`}>
-            <span className={styles.knob} />
-          </span>
-        </button>
+        <div className={styles.metaRow}>
+          <div className={styles.group}>
+            <span className={styles.label}>Urgencia</span>
+            <div
+              className={`${styles.segment} ${styles.segmentIcons}`}
+              role="radiogroup"
+              aria-label="Urgencia"
+            >
+              {URGENCIES.map((level) => (
+                <button
+                  key={level}
+                  type="button"
+                  role="radio"
+                  aria-checked={form.urgency === level}
+                  aria-label={URGENCY_LABEL[level]}
+                  className={`${styles.segmentItem} ${form.urgency === level ? styles.segmentOn : ''}`}
+                  style={
+                    form.urgency === level
+                      ? {
+                          background: `var(--urgency-${level})`,
+                          // Blanco sobre el amarillo de "media" da un contraste ilegible.
+                          color: level === 'media' ? '#4a3a10' : '#fff',
+                        }
+                      : undefined
+                  }
+                  onClick={() => set('urgency', level)}
+                >
+                  <IconSignalBars bars={URGENCY_BARS[level]} />
+                </button>
+              ))}
+            </div>
+          </div>
 
-        {!isEdit ? (
+          <div className={`${styles.group} ${styles.metaDate}`}>
+            <span className={styles.label}>Fecha límite</span>
+            <div
+              className={`${styles.chips} ${styles.chipsNowrap}`}
+              role="radiogroup"
+              aria-label="Fecha límite"
+            >
+              {presets.map((preset) => {
+                const active = form.deadline === preset.value
+                return (
+                  <button
+                    key={preset.key}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    className={`${styles.chip} ${active ? styles.chipOn : ''}`}
+                    onClick={() => {
+                      set('deadline', active ? '' : preset.value)
+                      setShowCalendar(false)
+                    }}
+                  >
+                    {preset.label}
+                  </button>
+                )
+              })}
+              <button
+                type="button"
+                className={`${styles.chip} ${styles.chipIcon} ${customDate ? styles.chipOn : ''}`}
+                aria-expanded={showCalendar}
+                aria-label={customDate ? `Fecha ${formatShortDate(form.deadline)}` : 'Elegir fecha'}
+                title={customDate ? formatShortDate(form.deadline) : undefined}
+                onClick={() => setShowCalendar((value) => !value)}
+              >
+                <IconCalendar size={16} />
+              </button>
+              {form.deadline ? (
+                <button
+                  type="button"
+                  className={styles.chipClear}
+                  aria-label="Sacar la fecha límite"
+                  onClick={() => {
+                    set('deadline', '')
+                    setShowCalendar(false)
+                  }}
+                >
+                  <IconClose size={13} />
+                </button>
+              ) : null}
+            </div>
+            {showCalendar ? (
+              <input
+                type="date"
+                className={styles.input}
+                value={form.deadline ?? ''}
+                aria-label="Elegir fecha"
+                onChange={(e) => set('deadline', e.target.value)}
+              />
+            ) : null}
+          </div>
+        </div>
+
+        <div className={styles.actionRow}>
           <button
             type="button"
-            className={`${styles.disclosure} ${details ? styles.disclosureOpen : ''}`}
-            aria-expanded={details}
-            onClick={() => setDetails((value) => !value)}
+            className={`${styles.todayRow} ${form.inToday ? styles.todayRowOn : ''}`}
+            role="switch"
+            aria-checked={form.inToday}
+            onClick={() => set('inToday', !form.inToday)}
           >
-            <IconChevronDown size={18} className={details ? styles.chevUp : undefined} />
-            Más detalles
-            {!details && extras > 0 ? <span className={styles.count}>{extras}</span> : null}
+            <IconSun size={16} />
+            Agregar a hoy
+            <span className={`${styles.switch} ${form.inToday ? styles.switchOn : ''}`}>
+              <span className={styles.knob} />
+            </span>
           </button>
-        ) : null}
+
+          {!isEdit ? (
+            <button
+              type="button"
+              className={`${styles.disclosure} ${details ? styles.disclosureOpen : ''}`}
+              aria-expanded={details}
+              onClick={() => setDetails((value) => !value)}
+            >
+              <IconChevronDown size={16} className={details ? styles.chevUp : undefined} />
+              Más detalles
+              {!details && extras > 0 ? <span className={styles.count}>{extras}</span> : null}
+            </button>
+          ) : null}
+        </div>
 
         {details ? (
           <>

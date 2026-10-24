@@ -12,6 +12,7 @@ import {
 } from '@dnd-kit/core'
 import { useModals } from '../app/modals'
 import { ErrorState, LoadingState } from '../components/Feedback'
+import { TaskListLabel } from '../components/TaskListLabel'
 import { StatusToggle } from '../components/StatusToggle'
 import { IconChevronLeft, IconChevronRight, IconEye, IconEyeOff } from '../components/Icons'
 import { useColorOf } from '../lib/palette'
@@ -229,6 +230,7 @@ function WeekCard({ task, categories }: { task: Task; categories: Category[] }) 
         />
         <button type="button" className={styles.cardTitle} onClick={() => openTask({ taskId: task.id })}>
           <span className={task.status === 'hecha' ? styles.done : undefined}>{task.title}</span>
+          <TaskListLabel listName={category?.name ?? null} />
         </button>
       </div>
 

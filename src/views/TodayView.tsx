@@ -26,10 +26,18 @@ import {
   IconPlus,
   IconSun,
 } from '../components/Icons'
+import { useTaskSettings } from '../app/task-settings'
+import { TaskListLabel } from '../components/TaskListLabel'
 import { celebrateFromPointer, shouldCelebrateChecked } from '../lib/confetti'
-import { formatTodayHeading } from '../lib/dates'
+import { formatTodayHeading, todayKey } from '../lib/dates'
 import { tasksForHomeRail } from '../lib/home-rail'
 import { useColorOf } from '../lib/palette'
+import {
+  addToTodayPatch,
+  categoryListName,
+  isShownInTodayPanel,
+  suggestionStripTasks,
+} from '../lib/settings'
 import { isExpiredCompleted } from '../shared/expiry'
 import { useAppState, useReorderToday, useUpdateSubtask, useUpdateTask } from '../lib/store'
 import { nextTodayPositions } from '../lib/today-order'
@@ -62,15 +70,22 @@ export function TodayView() {
 
   const tasks = data?.tasks ?? []
   const categories = data?.categories ?? []
+  const { suggestDueToday } = useTaskSettings()
+  const today = todayKey()
 
   const listed = useMemo(() => tasks.filter((task) => !isExpiredCompleted(task)), [tasks])
 
   const todayTasks = useMemo(
     () =>
-      listed
-        .filter((task) => task.inToday && (showHidden || !task.hiddenInToday))
+      tasks
+        .filter((task) => isShownInTodayPanel(task, showHidden))
         .sort((a, b) => (a.todayPosition ?? 0) - (b.todayPosition ?? 0)),
-    [listed, showHidden],
+    [tasks, showHidden],
+  )
+
+  const suggestions = useMemo(
+    () => suggestionStripTasks(tasks, today, showHidden, suggestDueToday),
+    [tasks, today, showHidden, suggestDueToday],
   )
 
   const hiddenCount = listed.filter((t) => t.inToday && t.hiddenInToday).length
@@ -95,7 +110,7 @@ export function TodayView() {
 
     if (!task.inToday) {
       if (over === TODAY_ZONE || todayTasks.some((item) => item.id === over)) {
-        updateTask.mutate({ id: task.id, patch: { inToday: true, hiddenInToday: false } })
+        updateTask.mutate({ id: task.id, patch: addToTodayPatch() })
       }
       return
     }
@@ -126,6 +141,7 @@ export function TodayView() {
           hiddenCount={hiddenCount}
           showHidden={showHidden}
           onToggleHidden={() => setShowHidden((value) => !value)}
+          suggestions={isPending || error ? [] : suggestions}
           isPending={isPending}
           error={error}
         />
@@ -188,6 +204,27 @@ function makeTodayCollision(todayIds: Set<string>): CollisionDetection {
   }
 }
 
+function SuggestStrip({ tasks }: { tasks: Task[] }) {
+  const updateTask = useUpdateTask()
+
+  return (
+    <ul className={styles.suggest} aria-label="Sugerencias para hoy">
+      {tasks.map((task) => (
+        <li key={task.id} className={styles.suggestRow}>
+          <span className={styles.suggestTitle}>{task.title}</span>
+          <button
+            type="button"
+            className={styles.suggestTake}
+            onClick={() => updateTask.mutate({ id: task.id, patch: addToTodayPatch() })}
+          >
+            Tomar para hoy
+          </button>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 // --- Panel de Hoy ---------------------------------------------------------
 
 function TodayPanel({
@@ -196,6 +233,7 @@ function TodayPanel({
   hiddenCount,
   showHidden,
   onToggleHidden,
+  suggestions,
   isPending,
   error,
 }: {
@@ -204,6 +242,7 @@ function TodayPanel({
   hiddenCount: number
   showHidden: boolean
   onToggleHidden: () => void
+  suggestions: Task[]
   isPending: boolean
   error: unknown
 }) {
@@ -240,6 +279,8 @@ function TodayPanel({
           </button>
         ) : null}
       </header>
+
+      {suggestions.length > 0 ? <SuggestStrip tasks={suggestions} /> : null}
 
       {/* El heading no depende de los datos: se queda montado para que la
           pantalla no salte de un spinner centrado al panel completo. */}
@@ -329,6 +370,7 @@ function TodayRow({ task, categories }: { task: Task; categories: Category[] }) 
 
         <button type="button" className={styles.rowTitle} onClick={() => openTask({ taskId: task.id })}>
           <span className={task.status === 'hecha' ? styles.rowDone : undefined}>{task.title}</span>
+          <TaskListLabel listName={categoryListName(task.categoryId, categories)} />
         </button>
 
         <button
@@ -416,6 +458,7 @@ function Rail({
           <CategoryGroup
             key={category.id}
             name={category.name}
+            listName={category.name}
             colorKey={category.colorKey}
             tasks={visible}
             onAddTask={() => onAddTask(category.id)}
@@ -426,6 +469,7 @@ function Rail({
       {visibleUncategorized && visibleUncategorized.length > 0 ? (
         <CategoryGroup
           name="Sin categoría"
+          listName={null}
           colorKey={null}
           tasks={visibleUncategorized}
           onAddTask={() => onAddTask(null)}
@@ -437,11 +481,13 @@ function Rail({
 
 function CategoryGroup({
   name,
+  listName,
   colorKey,
   tasks,
   onAddTask,
 }: {
   name: string
+  listName: string | null
   colorKey: string | null
   tasks: Task[]
   onAddTask: () => void
@@ -481,7 +527,7 @@ function CategoryGroup({
           <ul className={styles.groupList}>
             {tasks.length === 0 ? <li className={styles.groupEmpty}>Sin tareas</li> : null}
             {tasks.map((task) => (
-              <RailTask key={task.id} task={task} tint={color.soft} dot={color.dot} />
+              <RailTask key={task.id} task={task} tint={color.soft} dot={color.dot} listName={listName} />
             ))}
           </ul>
         </div>
@@ -490,7 +536,17 @@ function CategoryGroup({
   )
 }
 
-function RailTask({ task, tint, dot }: { task: Task; tint: string; dot: string }) {
+function RailTask({
+  task,
+  tint,
+  dot,
+  listName,
+}: {
+  task: Task
+  tint: string
+  dot: string
+  listName: string | null
+}) {
   const { openTask } = useModals()
   const updateTask = useUpdateTask()
   // Si ya esta en Hoy, el sortable de alla es el unico dueno del id: registrar
@@ -521,6 +577,7 @@ function RailTask({ task, tint, dot }: { task: Task; tint: string; dot: string }
           onClick={() => openTask({ taskId: task.id })}
         >
           <span className={task.status === 'hecha' ? styles.rowDone : undefined}>{task.title}</span>
+          <TaskListLabel listName={listName} />
         </button>
         {task.inToday ? (
           <span className={styles.inToday} style={{ background: dot }} title="Ya está en Hoy">

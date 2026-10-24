@@ -125,7 +125,11 @@
 }
 
 .taskTitle {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   flex: 1;
+  min-width: 0;
   text-align: left;
   font-size: 14.5px;
   font-weight: 700;

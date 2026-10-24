@@ -2,9 +2,11 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Fabs } from '../components/Fabs'
 import { IconCalendar, IconChart, IconGrid, IconInbox, IconLogout, IconMoon, IconNote, IconSun } from '../components/Icons'
+import { SettingsMenu } from '../components/SettingsMenu'
 import { authClient } from '../lib/auth'
 import { useAppState } from '../lib/store'
 import { ModalProvider } from './modals'
+import { TaskSettingsProvider } from './task-settings'
 import { ToastHost } from './ToastHost'
 import { UpdateBanner } from './UpdateBanner'
 import { useThemeMode } from './theme'
@@ -74,88 +76,91 @@ export function AppShell() {
   )
 
   return (
-    <div className={styles.shell}>
-      <DocumentTitle />
-      <header
-        className={`${styles.header} ${skyReady ? styles.skyReady : ''}`}
-        data-period={period}
-        data-raining={raining ? 'true' : 'false'}
-        style={skyStyle}
-      >
-        <div className={styles.sky} aria-hidden="true">
-          <span className={styles.skyGlow} />
-          <span className={styles.skyPattern} />
-          {raining ? (
-            <span className={styles.skyRain}>
-              {RAIN_DROPS.map((drop, index) => (
-                <span
-                  key={index}
-                  className={styles.drop}
-                  style={{
-                    left: drop.left,
-                    height: drop.height,
-                    opacity: drop.opacity,
-                    animationDelay: drop.delay,
-                    animationDuration: drop.duration,
-                  }}
-                />
-              ))}
+    <TaskSettingsProvider>
+      <div className={styles.shell}>
+        <DocumentTitle />
+        <header
+          className={`${styles.header} ${skyReady ? styles.skyReady : ''}`}
+          data-period={period}
+          data-raining={raining ? 'true' : 'false'}
+          style={skyStyle}
+        >
+          <div className={styles.sky} aria-hidden="true">
+            <span className={styles.skyGlow} />
+            <span className={styles.skyPattern} />
+            {raining ? (
+              <span className={styles.skyRain}>
+                {RAIN_DROPS.map((drop, index) => (
+                  <span
+                    key={index}
+                    className={styles.drop}
+                    style={{
+                      left: drop.left,
+                      height: drop.height,
+                      opacity: drop.opacity,
+                      animationDelay: drop.delay,
+                      animationDuration: drop.duration,
+                    }}
+                  />
+                ))}
+              </span>
+            ) : null}
+          </div>
+
+          <NavLink to="/" end className={styles.brand} aria-label="Ir a Hoy">
+            <span className={styles.logo} aria-hidden="true">
+              <img src="/brand/logo-mark.webp" alt="" width="34" height="34" />
             </span>
-          ) : null}
-        </div>
+            <span className={styles.brandName}>GoGoBoy</span>
+          </NavLink>
 
-        <NavLink to="/" end className={styles.brand} aria-label="Ir a Hoy">
-          <span className={styles.logo} aria-hidden="true">
-            <img src="/brand/logo-mark.webp" alt="" width="34" height="34" />
-          </span>
-          <span className={styles.brandName}>GoGoBoy</span>
-        </NavLink>
+          <nav className={styles.tabs} aria-label="Vistas">
+            {TABS.map(({ to, label, Icon, badge }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === '/'}
+                className={({ isActive }) => `${styles.tab} ${isActive ? styles.tabActive : ''}`}
+                aria-label={badge && pending > 0 ? `${label}, ${pending} pendientes` : undefined}
+              >
+                <Icon size={20} />
+                <span className={styles.tabLabel}>{label}</span>
+                {badge && pending > 0 ? <span className={styles.badge}>{pending}</span> : null}
+              </NavLink>
+            ))}
+          </nav>
 
-        <nav className={styles.tabs} aria-label="Vistas">
-          {TABS.map(({ to, label, Icon, badge }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              className={({ isActive }) => `${styles.tab} ${isActive ? styles.tabActive : ''}`}
-              aria-label={badge && pending > 0 ? `${label}, ${pending} pendientes` : undefined}
+          <div className={styles.headerActions}>
+            <button
+              type="button"
+              className={styles.themeButton}
+              onClick={() => authClient.signOut()}
+              aria-label="Cerrar sesión"
             >
-              <Icon size={20} />
-              <span className={styles.tabLabel}>{label}</span>
-              {badge && pending > 0 ? <span className={styles.badge}>{pending}</span> : null}
-            </NavLink>
-          ))}
-        </nav>
+              <IconLogout size={20} />
+            </button>
+            <button
+              type="button"
+              className={styles.themeButton}
+              onClick={toggle}
+              aria-label={mode === 'light' ? 'Activar modo oscuro' : 'Activar modo claro'}
+            >
+              {mode === 'light' ? <IconMoon size={20} /> : <IconSun size={20} />}
+            </button>
+            <SettingsMenu buttonClassName={styles.themeButton} />
+          </div>
+        </header>
 
-        <div className={styles.headerActions}>
-          <button
-            type="button"
-            className={styles.themeButton}
-            onClick={() => authClient.signOut()}
-            aria-label="Cerrar sesión"
-          >
-            <IconLogout size={20} />
-          </button>
-          <button
-            type="button"
-            className={styles.themeButton}
-            onClick={toggle}
-            aria-label={mode === 'light' ? 'Activar modo oscuro' : 'Activar modo claro'}
-          >
-            {mode === 'light' ? <IconMoon size={20} /> : <IconSun size={20} />}
-          </button>
-        </div>
-      </header>
+        <ModalProvider>
+          <main className={styles.main} id="main">
+            <Outlet />
+          </main>
 
-      <ModalProvider>
-        <main className={styles.main} id="main">
-          <Outlet />
-        </main>
-
-        <Fabs />
-        <ToastHost />
-        <UpdateBanner />
-      </ModalProvider>
-    </div>
+          <Fabs />
+          <ToastHost />
+          <UpdateBanner />
+        </ModalProvider>
+      </div>
+    </TaskSettingsProvider>
   )
 }

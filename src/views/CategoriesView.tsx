@@ -1,5 +1,6 @@
 import { useModals } from '../app/modals'
 import { ErrorState, LoadingState } from '../components/Feedback'
+import { TaskListLabel } from '../components/TaskListLabel'
 import { StatusToggle } from '../components/StatusToggle'
 import {
   IconCalendar,
@@ -102,7 +103,13 @@ export function CategoriesView() {
               ) : (
                 <ul className={styles.taskList}>
                   {own.map((task) => (
-                    <TaskCard key={task.id} task={task} tint={color.soft} dot={color.dot} />
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      tint={color.soft}
+                      dot={color.dot}
+                      listName={category.name}
+                    />
                   ))}
                 </ul>
               )}
@@ -120,7 +127,13 @@ export function CategoriesView() {
             </header>
             <ul className={styles.taskList}>
               {uncategorized.map((task) => (
-                <TaskCard key={task.id} task={task} tint="var(--surface)" dot="var(--ink-faint)" />
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  tint="var(--surface)"
+                  dot="var(--ink-faint)"
+                  listName={null}
+                />
               ))}
             </ul>
           </section>
@@ -131,7 +144,17 @@ export function CategoriesView() {
 }
 
 /** Tarjeta con mas detalle que la fila de Hoy: urgencia, deadline y progreso de subtareas. */
-function TaskCard({ task, tint, dot }: { task: Task; tint: string; dot: string }) {
+function TaskCard({
+  task,
+  tint,
+  dot,
+  listName,
+}: {
+  task: Task
+  tint: string
+  dot: string
+  listName: string | null
+}) {
   const { openTask } = useModals()
   const updateTask = useUpdateTask()
   const doneSubtasks = task.subtasks.filter((subtask) => subtask.done).length
@@ -146,6 +169,7 @@ function TaskCard({ task, tint, dot }: { task: Task; tint: string; dot: string }
         />
         <button type="button" className={styles.taskTitle} onClick={() => openTask({ taskId: task.id })}>
           <span className={task.status === 'hecha' ? styles.done : undefined}>{task.title}</span>
+          <TaskListLabel listName={listName} />
         </button>
         {task.inToday ? (
           <span className={styles.inToday} style={{ background: dot }} title="En Hoy">

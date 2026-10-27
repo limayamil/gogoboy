@@ -7,6 +7,9 @@ export const SHOW_LIST_ON_TASK_KEY = 'gogoboy.showListOnTask'
 /** Prendido salvo que la clave sea "false": el default es sugerir. */
 export const SUGGEST_DUE_TODAY_KEY = 'gogoboy.suggestDueToday'
 
+/** Apagado por defecto: sin el ajuste no se dibuja la barra ni se baja ningún feed. */
+export const SHOW_MEETS_KEY = 'gogoboy.showMeets'
+
 type StorageRead = (key: string) => string | null
 
 export function readShowListOnTask(read: StorageRead): boolean {
@@ -15,6 +18,10 @@ export function readShowListOnTask(read: StorageRead): boolean {
 
 export function readSuggestDueToday(read: StorageRead): boolean {
   return read(SUGGEST_DUE_TODAY_KEY) !== 'false'
+}
+
+export function readShowMeets(read: StorageRead): boolean {
+  return read(SHOW_MEETS_KEY) === 'true'
 }
 
 /** Nombre bajo el título. Sin ajuste, o sin lista, no hay línea. */

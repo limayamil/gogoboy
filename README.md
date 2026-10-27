@@ -73,6 +73,14 @@ abre el resto de `/api`. Las notas tipo password no se exponen.
 3. En [grok.com/connectors](https://grok.com/connectors) → Custom, URL
    `https://<tu-dominio>/api/mcp` y el mismo token como Authorization.
 
+## Meets del dia
+
+Ajustes -> **Mostrar Meets del dia** (apagado por defecto) agrega una barra a la derecha con
+las reuniones de hoy en hora de Buenos Aires. Los calendarios se cargan en Ajustes ->
+**Calendarios** con la direccion secreta en formato iCal de Google Calendar (sin OAuth).
+La direccion se guarda en `meet_calendars` y no vuelve nunca al navegador: `GET /api/meets`
+baja cada feed desde el servidor, con 5 minutos de cache por instancia. Apagado, no se pide nada.
+
 ## Adjuntos
 
 Los archivos van a un bucket S3-compatible via URL prefirmada (el navegador sube directo,

@@ -1,7 +1,10 @@
 .panel {
   position: fixed;
   z-index: 30;
-  width: min(320px, calc(100vw - 24px));
+  width: min(340px, calc(100vw - 24px));
+  /* Con varios calendarios y el formulario abierto, el panel pasa el alto de la pantalla. */
+  max-height: calc(100dvh - var(--header-h) - 16px);
+  overflow-y: auto;
   padding: 14px;
   border-radius: var(--r-md);
   background: var(--surface);

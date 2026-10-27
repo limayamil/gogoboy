@@ -196,3 +196,75 @@ export interface NoteInput {
   /** Nombres, no ids: el servidor hace upsert de la etiqueta. */
   tags?: string[]
 }
+
+/**
+ * Zona de las Meets del día. Fija a propósito: ni la del navegador ni GOGOBOY_TZ.
+ * Argentina no tiene horario de verano, así que es siempre GMT-3.
+ */
+export const MEETS_TIME_ZONE = 'America/Argentina/Buenos_Aires'
+
+/** Calendario de Google tal como lo ve el front: la dirección secreta nunca vuelve. */
+export interface MeetCalendar {
+  id: string
+  name: string
+  colorKey: string
+  /** Para reconocerla, no para usarla: `calendar.google.com/…/private-••••a1b2/basic.ics`. */
+  maskedUrl: string
+  position: number
+  createdAt: string
+}
+
+export interface MeetCalendarInput {
+  name: string
+  colorKey: string
+  icalUrl: string
+}
+
+export type MeetResponse = 'si' | 'no' | 'tal_vez' | 'sin_responder'
+
+export interface MeetPerson {
+  name: string | null
+  email: string | null
+}
+
+export interface MeetAttendee extends MeetPerson {
+  response: MeetResponse
+}
+
+export interface MeetAttachment {
+  title: string
+  url: string
+}
+
+export interface MeetEvent {
+  /** Único por ocurrencia: una serie repite uid pero no inicio. */
+  id: string
+  calendarId: string
+  title: string
+  /** ISO en UTC. En un evento de todo el día es la medianoche GMT-3 de su primer día. */
+  start: string
+  end: string
+  allDay: boolean
+  location: string | null
+  /** Texto plano: el HTML del feed se convierte en el servidor y los links se arman en el front. */
+  description: string | null
+  meetUrl: string | null
+  organizer: MeetPerson | null
+  attendees: MeetAttendee[]
+  attachments: MeetAttachment[]
+}
+
+export interface MeetCalendarStatus {
+  id: string
+  name: string
+  colorKey: string
+  /** null si el feed cargó; si no, el motivo para mostrar al lado del nombre. */
+  error: string | null
+}
+
+export interface MeetsToday {
+  /** 'YYYY-MM-DD' en MEETS_TIME_ZONE. */
+  date: string
+  events: MeetEvent[]
+  calendars: MeetCalendarStatus[]
+}

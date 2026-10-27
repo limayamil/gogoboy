@@ -25,6 +25,28 @@ describe('handleApi', () => {
     expect(del.status).toBe(401)
   })
 
+  it('las rutas de Meets existen y piden el mismo JWT que el resto', async () => {
+    const paths: Array<[string, string]> = [
+      ['/api/meets', 'GET'],
+      ['/api/meet-calendars', 'GET'],
+      ['/api/meet-calendars', 'POST'],
+      [`/api/meet-calendars/${UUID}`, 'PATCH'],
+      [`/api/meet-calendars/${UUID}`, 'DELETE'],
+    ]
+    for (const [path, method] of paths) {
+      expect((await call(path)).status).toBe(204)
+      const anonymous = await call(path, method)
+      expect(anonymous.status).toBe(401)
+      const forged = await handleApi(
+        new Request(`https://gogoboy.vercel.app${path}`, {
+          method,
+          headers: { authorization: 'Bearer token-inventado' },
+        }),
+      )
+      expect(forged.status).toBe(401)
+    }
+  })
+
   it('responde 404 JSON cuando la ruta no existe', async () => {
     const response = await call('/api/nope', 'GET')
     expect(response.status).toBe(404)

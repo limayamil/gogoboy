@@ -132,6 +132,20 @@ describe('createAuthenticator', () => {
     expect(response?.status).toBe(401)
   })
 
+  it('las rutas de Meets piden el email de la allowlist y no aceptan el token de agente', async () => {
+    const authenticate = createAuthenticator({
+      allowedEmail: allowed,
+      agentToken: 'agente-secreto',
+      verifyToken: async (token) => (token === 'jwt-yo' ? { email: allowed } : token === 'jwt-otro' ? { email: 'otro@example.com' } : null),
+    })
+
+    for (const path of ['/api/meets', '/api/meet-calendars', '/api/meet-calendars/11111111-2222-3333-4444-555555555555']) {
+      expect((await authenticate(request({ path, authorization: 'Bearer agente-secreto' })))?.status).toBe(401)
+      expect((await authenticate(request({ path, authorization: 'Bearer jwt-otro' })))?.status).toBe(403)
+      expect(await authenticate(request({ path, authorization: 'Bearer jwt-yo' }))).toBeNull()
+    }
+  })
+
   it('en /api/mcp responde 503 si el token de agente no esta configurado', async () => {
     const authenticate = createAuthenticator({
       allowedEmail: allowed,

@@ -2,6 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTaskSettings } from '../app/task-settings'
 import { IconSettings } from './Icons'
+import { MeetCalendarsSettings } from './MeetCalendarsSettings'
 import styles from './SettingsMenu.module.css'
 
 /**
@@ -14,7 +15,14 @@ export function SettingsMenu({ buttonClassName }: { buttonClassName: string }) {
   const panelRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
   const [box, setBox] = useState<{ top: number; right: number } | null>(null)
-  const { showListOnTask, suggestDueToday, setShowListOnTask, setSuggestDueToday } = useTaskSettings()
+  const {
+    showListOnTask,
+    suggestDueToday,
+    showMeets,
+    setShowListOnTask,
+    setSuggestDueToday,
+    setShowMeets,
+  } = useTaskSettings()
 
   function place() {
     const rect = buttonRef.current?.getBoundingClientRect()
@@ -100,6 +108,8 @@ export function SettingsMenu({ buttonClassName }: { buttonClassName: string }) {
                 label="Sugerir las que vencen hoy"
                 onChange={setSuggestDueToday}
               />
+              <Switch checked={showMeets} label="Mostrar Meets del día" onChange={setShowMeets} />
+              <MeetCalendarsSettings />
             </div>,
             document.body,
           )

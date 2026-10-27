@@ -1,0 +1,150 @@
+BEGIN:VCALENDAR
+PRODID:-//Google Inc//Google Calendar 70.9054//EN
+VERSION:2.0
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Trabajo
+X-WR-TIMEZONE:America/Argentina/Buenos_Aires
+BEGIN:VTIMEZONE
+TZID:America/Argentina/Buenos_Aires
+X-LIC-LOCATION:America/Argentina/Buenos_Aires
+BEGIN:STANDARD
+TZOFFSETFROM:-0300
+TZOFFSETTO:-0300
+TZNAME:GMT-3
+DTSTART:19700101T000000
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+DTSTART;TZID=America/Argentina/Buenos_Aires:20260901T100000
+DTEND;TZID=America/Argentina/Buenos_Aires:20260901T101500
+RRULE:FREQ=WEEKLY;BYDAY=TU
+DTSTAMP:20261020T120000Z
+UID:standup@google.com
+SUMMARY:Standup
+X-GOOGLE-CONFERENCE:https://meet.google.com/abc-defg-hij
+ORGANIZER;CN=Yamil Lima:mailto:yamil@example.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Yamil
+  Lima;X-NUM-GUESTS=0:mailto:yamil@example.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=DECLINED;CN=Ana Pé
+ rez;X-NUM-GUESTS=0:mailto:ana@example.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=TENTATIVE;CN=beto@
+ example.com;X-NUM-GUESTS=0:mailto:beto@example.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;X-NUM
+ -GUESTS=0:mailto:caro@example.com
+DESCRIPTION:Repaso <b>diario</b> del equipo.<br>Tablero: <a href="https://tre
+ llo.com/b/abc">Trello</a><br><script>alert(1)</script>Notas en https://docs
+ .google.com/document/d/123\n\n-::~:~::~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~
+ :~:~:~::~:~::-\nUnite con Google Meet: https://meet.google.com/abc-defg-hij
+ \n-::~:~::~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~::~:~::-
+ATTACH;FILENAME=Minuta standup;FMTTYPE=application/vnd.google-apps.document
+ :https://drive.google.com/open?id=minuta123
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=America/Argentina/Buenos_Aires:20261027T113000
+DTEND;TZID=America/Argentina/Buenos_Aires:20261027T114500
+DTSTAMP:20261020T120000Z
+UID:standup@google.com
+RECURRENCE-ID;TZID=America/Argentina/Buenos_Aires:20261027T100000
+SUMMARY:Standup (movido)
+X-GOOGLE-CONFERENCE:https://meet.google.com/abc-defg-hij
+ORGANIZER;CN=Yamil Lima:mailto:yamil@example.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Yamil
+  Lima;X-NUM-GUESTS=0:mailto:yamil@example.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=DECLINED;CN=Ana Pé
+ rez;X-NUM-GUESTS=0:mailto:ana@example.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=TENTATIVE;CN=beto@
+ example.com;X-NUM-GUESTS=0:mailto:beto@example.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;X-NUM
+ -GUESTS=0:mailto:caro@example.com
+DESCRIPTION:Hoy lo corremos a las 11:30 por la demo.<br>Tablero: <a href="ht
+ tps://trello.com/b/abc">Trello</a><br>Notas en https://docs.google.com/docu
+ ment/d/123\n\n-::~:~::~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~::~:~::-\n
+ Unite con Google Meet: https://meet.google.com/abc-defg-hij\n-::~:~::~:~:~:
+ ~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~::~:~::-
+ATTACH;FILENAME=Minuta standup;FMTTYPE=application/vnd.google-apps.document
+ :https://drive.google.com/open?id=minuta123
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=America/Argentina/Buenos_Aires:20261001T090000
+DTEND;TZID=America/Argentina/Buenos_Aires:20261001T093000
+RRULE:FREQ=DAILY
+EXDATE;TZID=America/Argentina/Buenos_Aires:20261027T090000
+DTSTAMP:20261020T120000Z
+UID:sync-diario@google.com
+SUMMARY:Sync diario
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=America/Argentina/Buenos_Aires:20261020T150000
+DTEND;TZID=America/Argentina/Buenos_Aires:20261020T160000
+RRULE:FREQ=DAILY;COUNT=30
+DTSTAMP:20261020T120000Z
+UID:revision@google.com
+SUMMARY:Revisión de diseño
+LOCATION:https://meet.google.com/rev-isio-nes
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=America/Argentina/Buenos_Aires:20261027T150000
+DTEND;TZID=America/Argentina/Buenos_Aires:20261027T160000
+DTSTAMP:20261020T120000Z
+UID:revision@google.com
+RECURRENCE-ID;TZID=America/Argentina/Buenos_Aires:20261027T150000
+SUMMARY:Revisión de diseño
+STATUS:CANCELLED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=America/Argentina/Buenos_Aires:20260930T100000
+DTEND;TZID=America/Argentina/Buenos_Aires:20260930T110000
+RRULE:FREQ=WEEKLY;BYDAY=WE
+DTSTAMP:20261020T120000Z
+UID:planning@google.com
+SUMMARY:Planning semanal
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261027T200000Z
+DTEND:20261027T210000Z
+DTSTAMP:20261020T120000Z
+UID:planning@google.com
+RECURRENCE-ID;TZID=America/Argentina/Buenos_Aires:20261028T100000
+SUMMARY:Planning semanal (adelantado)
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261028T023000Z
+DTEND:20261028T025500Z
+DTSTAMP:20261020T120000Z
+UID:tarde@google.com
+SUMMARY:Llamada tarde
+DESCRIPTION:Link: https://meet.google.com/tar-dell-ama
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261028T033000Z
+DTEND:20261028T040000Z
+DTSTAMP:20261020T120000Z
+UID:madrugada@google.com
+SUMMARY:Llamada de madrugada
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20261027
+DTEND;VALUE=DATE:20261028
+DTSTAMP:20261020T120000Z
+UID:feriado@google.com
+SUMMARY:Día de foco
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=America/Argentina/Buenos_Aires:20261027T140000
+DTEND;TZID=America/Argentina/Buenos_Aires:20261027T143000
+DTSTAMP:20261020T120000Z
+UID:cancelada@google.com
+SUMMARY:Reunión cancelada
+STATUS:CANCELLED
+END:VEVENT
+END:VCALENDAR

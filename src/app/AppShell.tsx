@@ -6,6 +6,7 @@ import { MeetsSidebar } from '../components/MeetsSidebar'
 import { SettingsMenu } from '../components/SettingsMenu'
 import { authClient } from '../lib/auth'
 import { useAppState } from '../lib/store'
+import { toastError, toastSuccess } from '../lib/toast'
 import { ModalProvider } from './modals'
 import { TaskSettingsProvider, useTaskSettings } from './task-settings'
 import { ToastHost } from './ToastHost'
@@ -37,6 +38,29 @@ function DocumentTitle() {
   useEffect(() => {
     document.title = TITLES[pathname] ?? 'GoGoBoy'
   }, [pathname])
+  return null
+}
+
+const GOOGLE_RETURN: Record<string, { ok: boolean; message: string }> = {
+  conectada: { ok: true, message: 'Cuenta de Google conectada. Elegí qué calendarios mostrar en Ajustes → Calendarios.' },
+  cancelada: { ok: false, message: 'Cancelaste la conexión con Google.' },
+  error: { ok: false, message: 'No se pudo conectar la cuenta de Google. Probá de nuevo.' },
+  'no-configurado': { ok: false, message: 'Google no está configurado en el servidor.' },
+}
+
+/** /api/google/callback vuelve a `/?google=…`: lo avisamos una vez y limpiamos la URL. */
+function GoogleReturnNotice() {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const notice = GOOGLE_RETURN[params.get('google') ?? '']
+    if (!params.has('google')) return
+    params.delete('google')
+    const query = params.toString()
+    window.history.replaceState(null, '', `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`)
+    if (!notice) return
+    if (notice.ok) toastSuccess(notice.message)
+    else toastError(notice.message)
+  }, [])
   return null
 }
 
@@ -179,6 +203,7 @@ export function AppShell() {
 
           <Fabs />
           <ToastHost />
+          <GoogleReturnNotice />
           <UpdateBanner />
         </ModalProvider>
       </div>

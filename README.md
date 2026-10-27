@@ -81,6 +81,17 @@ las reuniones de hoy en hora de Buenos Aires. Los calendarios se cargan en Ajust
 La direccion se guarda en `meet_calendars` y no vuelve nunca al navegador: `GET /api/meets`
 baja cada feed desde el servidor, con 5 minutos de cache por instancia. Apagado, no se pide nada.
 
+### Cuentas de Google (OAuth)
+
+Los calendarios de Google Workspace no tienen direccion iCal secreta. Para esos, Ajustes ->
+Calendarios -> **Conectar cuenta de Google** (solo aparece con las tres variables cargadas):
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` y `GOOGLE_TOKEN_KEY` (`openssl rand -base64 32`).
+El refresh token queda en `google_accounts` cifrado con AES-256-GCM y nunca sale del servidor.
+`/api/google/callback` es la unica ruta sin JWT (Google redirige el navegador sin el header):
+la protege un `state` firmado atado a una cookie HttpOnly que deja `POST /api/google/connect`,
+que si pide JWT y allowlist. Sin las variables, iCal sigue igual. En Google Cloud, la redirect
+URI autorizada es `https://<tu-dominio>/api/google/callback` (y `http://localhost:5173/...` en dev).
+
 ## Adjuntos
 
 Los archivos van a un bucket S3-compatible via URL prefirmada (el navegador sube directo,

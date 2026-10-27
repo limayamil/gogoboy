@@ -260,6 +260,41 @@ export interface MeetCalendarStatus {
   colorKey: string
   /** null si el feed cargó; si no, el motivo para mostrar al lado del nombre. */
   error: string | null
+  /** Calendario de una cuenta de Google cuyo acceso venció o se revocó. */
+  reconnect: boolean
+}
+
+export type GoogleAccountStatus = 'ok' | 'reconectar'
+
+/** Un calendario de la cuenta (calendarList). `selection` es null si no se muestra. */
+export interface GoogleCalendarOption {
+  calendarId: string
+  summary: string
+  primary: boolean
+  selection: { id: string; name: string; colorKey: string } | null
+}
+
+/** Cuenta conectada tal como la ve el front: nunca lleva tokens. */
+export interface GoogleAccount {
+  id: string
+  email: string
+  status: GoogleAccountStatus
+  /** Si Google no respondió, quedan solo los ya elegidos y el motivo acá. */
+  error: string | null
+  calendars: GoogleCalendarOption[]
+}
+
+export interface GoogleAccountsResponse {
+  /** false si falta GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET o GOOGLE_TOKEN_KEY. */
+  configured: boolean
+  accounts: GoogleAccount[]
+}
+
+export interface GoogleCalendarInput {
+  accountId: string
+  calendarId: string
+  name: string
+  colorKey: string
 }
 
 export interface MeetsToday {

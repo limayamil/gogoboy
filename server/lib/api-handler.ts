@@ -36,6 +36,12 @@ import proposalById from '../proposals/[id].ts'
 import meets from '../meets.ts'
 import meetCalendars from '../meet-calendars/index.ts'
 import meetCalendarById from '../meet-calendars/[id].ts'
+import googleConnect from '../google/connect.ts'
+import googleCallback from '../google/callback.ts'
+import googleAccounts from '../google/accounts.ts'
+import googleAccountById from '../google-accounts/[id].ts'
+import googleCalendars from '../google-calendars/index.ts'
+import googleCalendarById from '../google-calendars/[id].ts'
 
 const routes: Route[] = [
   ['/api/state', state],
@@ -60,6 +66,13 @@ const routes: Route[] = [
   ['/api/meets', meets],
   ['/api/meet-calendars', meetCalendars],
   ['/api/meet-calendars/:id', meetCalendarById],
+  // Todas de uno o dos segmentos: son las únicas que Vercel enruta (ver arriba).
+  ['/api/google/connect', googleConnect],
+  ['/api/google/callback', googleCallback],
+  ['/api/google/accounts', googleAccounts],
+  ['/api/google-accounts/:id', googleAccountById],
+  ['/api/google-calendars', googleCalendars],
+  ['/api/google-calendars/:id', googleCalendarById],
 ]
 
 export const handleApi = createApiHandler(routes, authenticateRequest)

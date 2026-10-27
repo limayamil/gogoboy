@@ -33,6 +33,9 @@ import noteById from '../notes/[id].ts'
 import version from '../version.ts'
 import uploadsSign from '../uploads/sign.ts'
 import proposalById from '../proposals/[id].ts'
+import meets from '../meets.ts'
+import meetCalendars from '../meet-calendars/index.ts'
+import meetCalendarById from '../meet-calendars/[id].ts'
 
 const routes: Route[] = [
   ['/api/state', state],
@@ -54,6 +57,9 @@ const routes: Route[] = [
   ['/api/links/:id', linkById],
   ['/api/uploads/sign', uploadsSign],
   ['/api/proposals/:id', proposalById],
+  ['/api/meets', meets],
+  ['/api/meet-calendars', meetCalendars],
+  ['/api/meet-calendars/:id', meetCalendarById],
 ]
 
 export const handleApi = createApiHandler(routes, authenticateRequest)

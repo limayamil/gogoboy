@@ -239,3 +239,10 @@ export const IconCopy = ({ size = 18, className }: Props) => (
     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
   </svg>
 )
+
+export const IconVideo = ({ size = 18, className }: Props) => (
+  <svg {...base(size)} className={className} aria-hidden="true">
+    <rect x="2" y="6" width="14" height="12" rx="3" />
+    <path d="m16 10 6-3v10l-6-3" />
+  </svg>
+)

@@ -3,6 +3,7 @@
  * en la base y solo la lee el servidor para bajar el feed: ningún handler la
  * devuelve. Al front le llega `maskedUrl`.
  */
+import { isGoogleIcalUrl } from '../../src/shared/meets.ts'
 import type { MeetCalendar, MeetCalendarInput } from '../../src/shared/types.ts'
 import { sql } from './db.ts'
 import { HttpError } from './http.ts'
@@ -21,40 +22,19 @@ export interface MeetCalendarStore {
   remove(id: string): Promise<boolean>
 }
 
-const ICAL_HOST = 'calendar.google.com'
-const ICAL_PATH = '/calendar/ical/'
-
 function fail(message: string): never {
   throw new HttpError(400, message)
 }
 
-/**
- * Solo https y solo el host de iCal de Google: el servidor hace fetch de esta URL,
- * así que aceptar cualquier otra lo convertiría en un proxy hacia donde sea.
- */
 export function googleIcalUrl(value: unknown, field = 'icalUrl'): string {
   if (typeof value !== 'string') fail(`"${field}" debe ser texto`)
   const trimmed = value.trim()
   if (!trimmed) fail(`"${field}" no puede estar vacío`)
   if (trimmed.length > 2000) fail(`"${field}" supera los 2000 caracteres`)
-
-  let url: URL
-  try {
-    url = new URL(trimmed)
-  } catch {
-    fail('Pegá la dirección secreta en formato iCal de Google Calendar')
-  }
-  if (
-    url.protocol !== 'https:' ||
-    url.hostname !== ICAL_HOST ||
-    url.port !== '' ||
-    url.username !== '' ||
-    url.password !== '' ||
-    !url.pathname.startsWith(ICAL_PATH)
-  ) {
+  if (!isGoogleIcalUrl(trimmed)) {
     fail('Solo se aceptan direcciones https://calendar.google.com/calendar/ical/…')
   }
-  return url.toString()
+  return new URL(trimmed).toString()
 }
 
 /**

@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
   SHOW_LIST_ON_TASK_KEY,
+  SHOW_MEETS_KEY,
   SUGGEST_DUE_TODAY_KEY,
   addToTodayPatch,
   categoryListName,
   isShownInTodayPanel,
   readShowListOnTask,
+  readShowMeets,
   readSuggestDueToday,
   suggestionStripTasks,
   visibleListLabel,
@@ -27,6 +29,15 @@ function task(partial: Partial<Row> & { id: string }): Row {
     ...partial,
   }
 }
+
+describe('Meets del día', () => {
+  it('usa la clave gogoboy.showMeets y viene apagado', () => {
+    expect(SHOW_MEETS_KEY).toBe('gogoboy.showMeets')
+    expect(readShowMeets(() => null)).toBe(false)
+    expect(readShowMeets(() => 'false')).toBe(false)
+    expect(readShowMeets(() => 'true')).toBe(true)
+  })
+})
 
 describe('etiqueta de lista', () => {
   it('usa la clave gogoboy.showListOnTask y viene apagada', () => {

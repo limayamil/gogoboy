@@ -2,6 +2,9 @@ import type {
   AppState,
   Attachment,
   Category,
+  MeetCalendar,
+  MeetCalendarInput,
+  MeetsToday,
   Note,
   NoteInput,
   QuickTask,
@@ -112,4 +115,13 @@ export const api = {
   }) => request<Attachment>('/attachments', { method: 'POST', body: json(input) }),
   getAttachmentUrl: (id: string) => request<{ url: string }>(`/attachments/${id}`),
   deleteAttachment: (id: string) => request<unknown>(`/attachments/${id}`, { method: 'DELETE' }),
+
+  getMeetsToday: () => request<MeetsToday>('/meets'),
+  listMeetCalendars: () => request<MeetCalendar[]>('/meet-calendars'),
+  createMeetCalendar: (input: MeetCalendarInput) =>
+    request<MeetCalendar>('/meet-calendars', { method: 'POST', body: json(input) }),
+  /** Sin `icalUrl` el servidor conserva la dirección que ya tenía. */
+  updateMeetCalendar: (id: string, patch: Partial<MeetCalendarInput>) =>
+    request<MeetCalendar>(`/meet-calendars/${id}`, { method: 'PATCH', body: json(patch) }),
+  deleteMeetCalendar: (id: string) => request<unknown>(`/meet-calendars/${id}`, { method: 'DELETE' }),
 }

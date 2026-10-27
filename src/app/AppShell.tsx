@@ -2,11 +2,12 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Fabs } from '../components/Fabs'
 import { IconCalendar, IconChart, IconGrid, IconInbox, IconLogout, IconMoon, IconNote, IconSun } from '../components/Icons'
+import { MeetsSidebar } from '../components/MeetsSidebar'
 import { SettingsMenu } from '../components/SettingsMenu'
 import { authClient } from '../lib/auth'
 import { useAppState } from '../lib/store'
 import { ModalProvider } from './modals'
-import { TaskSettingsProvider } from './task-settings'
+import { TaskSettingsProvider, useTaskSettings } from './task-settings'
 import { ToastHost } from './ToastHost'
 import { UpdateBanner } from './UpdateBanner'
 import { useThemeMode } from './theme'
@@ -37,6 +38,28 @@ function DocumentTitle() {
     document.title = TITLES[pathname] ?? 'GoGoBoy'
   }, [pathname])
   return null
+}
+
+const MEETS_OPEN_KEY = 'gogoboy.meetsOpen'
+
+/** El contenido y, con el ajuste prendido, la barra de Meets que le come el costado derecho. */
+function ShellMain() {
+  const { showMeets } = useTaskSettings()
+  const [meetsOpen, setMeetsOpen] = useState(() => localStorage.getItem(MEETS_OPEN_KEY) !== 'false')
+
+  function changeMeetsOpen(open: boolean) {
+    localStorage.setItem(MEETS_OPEN_KEY, String(open))
+    setMeetsOpen(open)
+  }
+
+  return (
+    <>
+      <main className={`${styles.main} ${showMeets && meetsOpen ? styles.mainWithMeets : ''}`} id="main">
+        <Outlet />
+      </main>
+      {showMeets ? <MeetsSidebar open={meetsOpen} onOpenChange={changeMeetsOpen} /> : null}
+    </>
+  )
 }
 
 const RAIN_DROPS = Array.from({ length: 42 }, (_, index) => ({
@@ -152,9 +175,7 @@ export function AppShell() {
         </header>
 
         <ModalProvider>
-          <main className={styles.main} id="main">
-            <Outlet />
-          </main>
+          <ShellMain />
 
           <Fabs />
           <ToastHost />

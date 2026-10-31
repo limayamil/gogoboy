@@ -19,9 +19,11 @@ export function SettingsMenu({ buttonClassName }: { buttonClassName: string }) {
     showListOnTask,
     suggestDueToday,
     showMeets,
+    completedLastOnHome,
     setShowListOnTask,
     setSuggestDueToday,
     setShowMeets,
+    setCompletedLastOnHome,
   } = useTaskSettings()
 
   function place() {
@@ -107,6 +109,11 @@ export function SettingsMenu({ buttonClassName }: { buttonClassName: string }) {
                 checked={suggestDueToday}
                 label="Sugerir las que vencen hoy"
                 onChange={setSuggestDueToday}
+              />
+              <Switch
+                checked={completedLastOnHome}
+                label="Completadas al final"
+                onChange={setCompletedLastOnHome}
               />
               <Switch checked={showMeets} label="Mostrar Meets del día" onChange={setShowMeets} />
               <MeetCalendarsSettings />

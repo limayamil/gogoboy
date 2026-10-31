@@ -1,6 +1,8 @@
 import { timingSafeEqual } from 'node:crypto'
 import { createRemoteJWKSet, jwtVerify } from 'jose'
 
+export const GOOGLE_CALLBACK_PATH = '/api/google/callback'
+
 export interface TokenPayload {
   email?: unknown
 }
@@ -25,6 +27,10 @@ export function createAuthenticator(options: {
 
   return async (request) => {
     if (request.method.toUpperCase() === 'OPTIONS') return null
+
+    // La vuelta de Google es una navegación del navegador: no trae Authorization.
+    // La cuida el state firmado + cookie que emitió /api/google/connect (que sí pide JWT).
+    if (requestPath(request) === GOOGLE_CALLBACK_PATH) return null
 
     if (requestPath(request) === '/api/mcp') {
       if (!agentToken) return deny(503, 'MCP no configurado')

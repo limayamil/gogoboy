@@ -9,6 +9,8 @@ import {
 import { errorMessage } from '../lib/toast'
 import { isGoogleIcalUrl } from '../shared/meets'
 import type { MeetCalendar } from '../shared/types'
+import { ColorSwatches } from './ColorSwatches'
+import { GoogleAccountsSettings } from './GoogleAccountsSettings'
 import styles from './MeetCalendarsSettings.module.css'
 
 /**
@@ -70,6 +72,8 @@ export function MeetCalendarsSettings() {
           + Agregar calendario
         </button>
       )}
+
+      <GoogleAccountsSettings />
     </section>
   )
 }
@@ -77,7 +81,6 @@ export function MeetCalendarsSettings() {
 function CalendarForm({ calendar, onDone }: { calendar?: MeetCalendar; onDone: () => void }) {
   const create = useCreateMeetCalendar()
   const update = useUpdateMeetCalendar()
-  const colorOf = useColorOf()
   const [name, setName] = useState(calendar?.name ?? '')
   const [colorKey, setColorKey] = useState(calendar?.colorKey ?? PALETTE[3].key)
   const [icalUrl, setIcalUrl] = useState('')
@@ -130,20 +133,7 @@ function CalendarForm({ calendar, onDone }: { calendar?: MeetCalendar; onDone: (
 
       <div className={styles.field}>
         <span className={styles.label}>Color</span>
-        <div className={styles.swatches}>
-          {PALETTE.map((swatch) => (
-            <button
-              key={swatch.key}
-              type="button"
-              className={`${styles.swatch} ${colorKey === swatch.key ? styles.swatchOn : ''}`}
-              style={{ background: colorOf(swatch.key).dot }}
-              onClick={() => setColorKey(swatch.key)}
-              aria-label={swatch.label}
-              aria-pressed={colorKey === swatch.key}
-              title={swatch.label}
-            />
-          ))}
-        </div>
+        <ColorSwatches value={colorKey} onChange={setColorKey} />
       </div>
 
       <label className={styles.field}>

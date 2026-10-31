@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
+  COMPLETED_LAST_ON_HOME_KEY,
   SHOW_LIST_ON_TASK_KEY,
   SHOW_MEETS_KEY,
   SUGGEST_DUE_TODAY_KEY,
   addToTodayPatch,
   categoryListName,
   isShownInTodayPanel,
+  readCompletedLastOnHome,
   readShowListOnTask,
   readShowMeets,
   readSuggestDueToday,
@@ -29,6 +31,17 @@ function task(partial: Partial<Row> & { id: string }): Row {
     ...partial,
   }
 }
+
+describe('completadas al final en Hoy', () => {
+  it('usa la clave gogoboy.completedLastOnHome y viene apagado', () => {
+    expect(COMPLETED_LAST_ON_HOME_KEY).toBe('gogoboy.completedLastOnHome')
+    expect(readCompletedLastOnHome(() => null)).toBe(false)
+    expect(readCompletedLastOnHome(() => 'false')).toBe(false)
+    expect(readCompletedLastOnHome(() => '')).toBe(false)
+    expect(readCompletedLastOnHome(() => 'TRUE')).toBe(false)
+    expect(readCompletedLastOnHome(() => 'true')).toBe(true)
+  })
+})
 
 describe('Meets del día', () => {
   it('usa la clave gogoboy.showMeets y viene apagado', () => {

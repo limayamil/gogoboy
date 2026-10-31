@@ -26,6 +26,7 @@ export function StatusToggle({ status, onChange, size = 'md' }: Props) {
     <button
       type="button"
       className={`${styles.toggle} ${styles[size]} ${styles[status]}`}
+      onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => {
         event.stopPropagation()
         const next = NEXT[status]

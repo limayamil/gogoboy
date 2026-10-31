@@ -3,13 +3,10 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
-  closestCenter,
-  pointerWithin,
   useDraggable,
   useDroppable,
   useSensor,
   useSensors,
-  type CollisionDetection,
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
@@ -23,6 +20,7 @@ import {
   IconEye,
   IconEyeOff,
   IconFolder,
+  IconGrip,
   IconPlus,
   IconSun,
 } from '../components/Icons'
@@ -43,13 +41,17 @@ import {
   suggestionStripTasks,
 } from '../lib/settings'
 import { isExpiredCompleted } from '../shared/expiry'
+import {
+  HOY_HANDLE_ACTIVATION_PX,
+  HOY_PANEL_ID,
+  LIST_PANEL_ID,
+  makeHoyCollision,
+  restrictHoyReorderToVerticalAxis,
+} from '../lib/hoy-drag'
 import { useAppState, useReorderToday, useUpdateSubtask, useUpdateTask } from '../lib/store'
-import { nextTodayPositions } from '../lib/today-order'
+import { nextHoyPositions, orderHoyTasks } from '../lib/today-order'
 import type { Category, Task } from '../shared/types'
 import styles from './TodayView.module.css'
-
-const TODAY_ZONE = 'zona-hoy'
-const RAIL_ZONE = 'zona-listas'
 
 export function TodayView() {
   const { data, isPending, error } = useAppState()
@@ -64,22 +66,25 @@ export function TodayView() {
   )
   const [dragging, setDragging] = useState<Task | null>(null)
 
-  // Un drag recien arranca despues de 6px: asi un click simple sigue abriendo el modal.
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
+  // La manija arranca el reorder a los ~8px: un toque corto no mueve la fila.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: HOY_HANDLE_ACTIVATION_PX } }),
+  )
 
   const tasks = data?.tasks ?? []
   const categories = data?.categories ?? []
-  const { suggestDueToday } = useTaskSettings()
+  const { suggestDueToday, completedLastOnHome } = useTaskSettings()
   const today = todayKey()
 
   const listed = useMemo(() => tasks.filter((task) => !isExpiredCompleted(task)), [tasks])
 
   const todayTasks = useMemo(
     () =>
-      tasks
-        .filter((task) => isShownInTodayPanel(task, showHidden))
-        .sort((a, b) => (a.todayPosition ?? 0) - (b.todayPosition ?? 0)),
-    [tasks, showHidden],
+      orderHoyTasks(
+        tasks.filter((task) => isShownInTodayPanel(task, showHidden)),
+        completedLastOnHome,
+      ),
+    [tasks, showHidden, completedLastOnHome],
   )
 
   const suggestions = useMemo(
@@ -101,35 +106,34 @@ export function TodayView() {
     if (!task || overId == null) return
     const over = String(overId)
 
-    // Soltar en las listas saca la tarea de Hoy; sigue viviendo en su categoria.
-    if (over === RAIL_ZONE) {
-      if (task.inToday) updateTask.mutate({ id: task.id, patch: { inToday: false } })
-      return
-    }
+    // La manija solo sube y baja: soltar sobre Listas no saca la tarea de Hoy.
+    if (over === LIST_PANEL_ID) return
 
     if (!task.inToday) {
-      if (over === TODAY_ZONE || todayTasks.some((item) => item.id === over)) {
+      if (over === HOY_PANEL_ID || todayTasks.some((item) => item.id === over)) {
         updateTask.mutate({ id: task.id, patch: addToTodayPatch() })
       }
       return
     }
 
-    if (over === TODAY_ZONE) return
+    if (over === HOY_PANEL_ID) return
 
-    const orderedIds = tasks
-      .filter((item) => item.inToday)
-      .sort((a, b) => (a.todayPosition ?? 0) - (b.todayPosition ?? 0))
-      .map((item) => item.id)
-    const positions = nextTodayPositions(orderedIds, task.id, over)
+    const positions = nextHoyPositions(
+      tasks.filter((item) => item.inToday),
+      completedLastOnHome,
+      task.id,
+      over,
+    )
     if (positions) reorderToday.mutate(positions)
   }
 
-  const collisionDetection = makeTodayCollision(new Set(todayTasks.map((task) => task.id)))
+  const collisionDetection = makeHoyCollision(new Set(todayTasks.map((task) => task.id)))
 
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={collisionDetection}
+      modifiers={[restrictHoyReorderToVerticalAxis]}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
@@ -180,29 +184,6 @@ function categoryColorKey(categories: Category[], task: Task): string | null {
   return categories.find((c) => c.id === task.categoryId)?.colorKey ?? null
 }
 
-/**
- * Si estamos reordenando Hoy, una fila gana sobre el panel entero.
- * Si traemos desde las listas, el panel es el destino: si no, las filas se
- * apartarian como si insertaramos ahi, pero la tarea siempre entra al final.
- */
-function makeTodayCollision(todayIds: Set<string>): CollisionDetection {
-  return (args) => {
-    const pointerHits = pointerWithin(args)
-    const draggingToday = todayIds.has(String(args.active.id))
-
-    if (draggingToday) {
-      const itemHit = pointerHits.find((hit) => hit.id !== TODAY_ZONE && hit.id !== RAIL_ZONE)
-      if (itemHit) return [itemHit]
-      if (pointerHits.length > 0) return pointerHits
-      return closestCenter(args)
-    }
-
-    const zone = pointerHits.find((hit) => hit.id === TODAY_ZONE || hit.id === RAIL_ZONE)
-    if (zone) return [zone]
-    return pointerHits.length > 0 ? pointerHits : closestCenter(args)
-  }
-}
-
 function SuggestStrip({ tasks }: { tasks: Task[] }) {
   const updateTask = useUpdateTask()
 
@@ -245,7 +226,7 @@ function TodayPanel({
   isPending: boolean
   error: unknown
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: TODAY_ZONE })
+  const { setNodeRef, isOver } = useDroppable({ id: HOY_PANEL_ID })
   const today = formatTodayHeading(new Date())
   const comma = today.indexOf(',')
   const weekday = comma === -1 ? today : today.slice(0, comma)
@@ -325,8 +306,18 @@ function TodayRow({ task, categories }: { task: Task; categories: Category[] }) 
   const [open, setOpen] = useState(false)
   const hasSubtasks = task.subtasks.length > 0
   const color = useColorOf()(categoryColorKey(categories, task))
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+    isOver,
+  } = useSortable({
     id: task.id,
+    attributes: { roleDescription: 'reordenar' },
   })
 
   return (
@@ -342,8 +333,19 @@ function TodayRow({ task, categories }: { task: Task; categories: Category[] }) 
         transition,
       }}
     >
-      <div className={styles.todayRowMain} {...attributes} {...listeners}>
-        <span className={styles.rowBar} style={{ background: color.dot }} />
+      {isOver && !isDragging ? <span className={styles.insertLine} aria-hidden="true" /> : null}
+      <div className={styles.todayRowMain}>
+        <button
+          type="button"
+          ref={setActivatorNodeRef}
+          className={styles.dragHandle}
+          {...attributes}
+          {...listeners}
+          aria-label="Arrastrá para reordenar"
+        >
+          <span className={styles.rowBar} style={{ background: color.dot }} />
+          <IconGrip size={16} />
+        </button>
 
         {hasSubtasks ? (
           <button
@@ -367,7 +369,12 @@ function TodayRow({ task, categories }: { task: Task; categories: Category[] }) 
           onChange={(status) => updateTask.mutate({ id: task.id, patch: { status } })}
         />
 
-        <button type="button" className={styles.rowTitle} onClick={() => openTask({ taskId: task.id })}>
+        <button
+          type="button"
+          className={styles.rowTitle}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => openTask({ taskId: task.id })}
+        >
           <span className={task.status === 'hecha' ? styles.rowDone : undefined}>{task.title}</span>
           <TaskListLabel listName={categoryListName(task.categoryId, categories)} />
         </button>
@@ -377,6 +384,7 @@ function TodayRow({ task, categories }: { task: Task; categories: Category[] }) 
           className={styles.rowEye}
           title={task.hiddenInToday ? 'Volver a mostrar en Hoy' : 'Ocultar de Hoy'}
           aria-label={task.hiddenInToday ? 'Volver a mostrar en Hoy' : 'Ocultar de Hoy'}
+          onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => {
             event.stopPropagation()
             updateTask.mutate({ id: task.id, patch: { hiddenInToday: !task.hiddenInToday } })
@@ -413,7 +421,7 @@ function Rail({
   onAddCategory: () => void
   onAddTask: (categoryId: string | null) => void
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: RAIL_ZONE })
+  const { setNodeRef, isOver } = useDroppable({ id: LIST_PANEL_ID })
   const visibleUncategorized = tasksForHomeRail(uncategorized, hideCompleted)
   const hideLabel = hideCompleted ? 'Ver tareas hechas' : 'Ocultar tareas hechas'
 
@@ -535,34 +543,41 @@ function CategoryGroup({
   )
 }
 
-function RailTask({
+function RailTask(props: { task: Task; tint: string; dot: string; listName: string | null }) {
+  // `disabled` igual registra el nodo. Si la tarea ya está en Hoy, ese registro
+  // pisa al sortable: el overlay se mide en Listas y la manija pierde el eje vertical.
+  if (props.task.inToday) return <RailTaskRow {...props} />
+  return <RailTaskDraggable {...props} />
+}
+
+function RailTaskDraggable(props: { task: Task; tint: string; dot: string; listName: string | null }) {
+  const drag = useDraggable({ id: props.task.id })
+  return <RailTaskRow {...props} drag={drag} />
+}
+
+function RailTaskRow({
   task,
   tint,
   dot,
   listName,
+  drag,
 }: {
   task: Task
   tint: string
   dot: string
   listName: string | null
+  drag?: ReturnType<typeof useDraggable>
 }) {
   const { openTask } = useModals()
   const updateTask = useUpdateTask()
-  // Si ya esta en Hoy, el sortable de alla es el unico dueno del id: registrar
-  // otro draggable con el mismo id hace que el DragOverlay mida este nodo
-  // (abajo a la derecha) y aparezca una pildora fantasma.
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: task.id,
-    disabled: task.inToday,
-  })
 
   return (
     <li
-      ref={setNodeRef}
-      className={`${styles.railTask} ${isDragging ? styles.dragging : ''}`}
+      ref={drag?.setNodeRef}
+      className={`${styles.railTask} ${drag?.isDragging ? styles.dragging : ''}`}
       style={{ backgroundColor: tint }}
-      {...attributes}
-      {...listeners}
+      {...drag?.attributes}
+      {...drag?.listeners}
     >
       <div className={styles.railTaskMain}>
         <StatusToggle

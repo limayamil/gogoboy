@@ -30,7 +30,11 @@ import { useTaskSettings } from '../app/task-settings'
 import { TaskListLabel } from '../components/TaskListLabel'
 import { celebrateFromPointer, shouldCelebrateChecked } from '../lib/confetti'
 import { formatTodayHeading, todayKey } from '../lib/dates'
-import { tasksForHomeRail } from '../lib/home-rail'
+import {
+  HIDE_COMPLETED_ON_HOME_KEY,
+  readHideCompletedOnHome,
+  tasksForHomeRail,
+} from '../lib/home-rail'
 import { useColorOf } from '../lib/palette'
 import {
   addToTodayPatch,
@@ -47,13 +51,6 @@ import styles from './TodayView.module.css'
 const TODAY_ZONE = 'zona-hoy'
 const RAIL_ZONE = 'zona-listas'
 
-/** Preferencia de pantalla del rail: no va al servidor ni a otras vistas. */
-const HIDE_COMPLETED_ON_HOME_KEY = 'gogoboy.hideCompletedOnHome'
-
-function readHideCompletedOnHome(): boolean {
-  return localStorage.getItem(HIDE_COMPLETED_ON_HOME_KEY) === 'true'
-}
-
 export function TodayView() {
   const { data, isPending, error } = useAppState()
   const { openTask, openCategory } = useModals()
@@ -62,7 +59,9 @@ export function TodayView() {
 
   const colorOf = useColorOf()
   const [showHidden, setShowHidden] = useState(false)
-  const [hideCompleted, setHideCompleted] = useState(readHideCompletedOnHome)
+  const [hideCompleted, setHideCompleted] = useState(() =>
+    readHideCompletedOnHome(localStorage.getItem(HIDE_COMPLETED_ON_HOME_KEY)),
+  )
   const [dragging, setDragging] = useState<Task | null>(null)
 
   // Un drag recien arranca despues de 6px: asi un click simple sigue abriendo el modal.

@@ -12,6 +12,36 @@
   margin-bottom: var(--space-5);
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hideCompleted {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 16px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: color var(--dur-fast) ease, transform var(--dur-fast) var(--ease-out);
+}
+
+.hideCompleted:hover {
+  color: var(--accent);
+}
+
+.hideCompleted[aria-pressed='true'] {
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+}
+
 .newCategory {
   display: flex;
   align-items: center;

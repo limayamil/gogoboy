@@ -1,5 +1,8 @@
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { tasksForHomeRail } from './home-rail'
+import { HIDE_COMPLETED_ON_HOME_KEY, readHideCompletedOnHome, tasksForHomeRail } from './home-rail'
 
 const pendiente = { status: 'pendiente' as const, id: 'p' }
 const progreso = { status: 'en_progreso' as const, id: 'e' }
@@ -32,5 +35,32 @@ describe('tasksForHomeRail', () => {
     const tasks = [pendiente, hecha]
     tasksForHomeRail(tasks, true)
     expect(tasks).toEqual([pendiente, hecha])
+  })
+})
+
+describe('preferencia compartida de ocultar hechas', () => {
+  it('usa la clave de Hoy y arranca apagada', () => {
+    expect(HIDE_COMPLETED_ON_HOME_KEY).toBe('gogoboy.hideCompletedOnHome')
+    expect(readHideCompletedOnHome(null)).toBe(false)
+    expect(readHideCompletedOnHome('false')).toBe(false)
+    expect(readHideCompletedOnHome('')).toBe(false)
+    expect(readHideCompletedOnHome('TRUE')).toBe(false)
+    expect(readHideCompletedOnHome('true')).toBe(true)
+  })
+
+  it('Hoy y Categorías leen y escriben la misma preferencia y el mismo filtro', () => {
+    const views = dirname(fileURLToPath(import.meta.url))
+    const today = readFileSync(join(views, '../views/TodayView.tsx'), 'utf8')
+    const categories = readFileSync(join(views, '../views/CategoriesView.tsx'), 'utf8')
+
+    for (const source of [today, categories]) {
+      expect(source).toContain('HIDE_COMPLETED_ON_HOME_KEY')
+      expect(source).toContain('readHideCompletedOnHome')
+      expect(source).toContain('tasksForHomeRail')
+      expect(source).toContain('localStorage.getItem(HIDE_COMPLETED_ON_HOME_KEY)')
+      expect(source).toContain('localStorage.setItem(HIDE_COMPLETED_ON_HOME_KEY, String(next))')
+      expect(source).not.toContain("'gogoboy.hideCompletedOnHome'")
+      expect(source).not.toContain('"gogoboy.hideCompletedOnHome"')
+    }
   })
 })

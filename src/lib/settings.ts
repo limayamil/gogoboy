@@ -10,6 +10,9 @@ export const SUGGEST_DUE_TODAY_KEY = 'gogoboy.suggestDueToday'
 /** Apagado por defecto: sin el ajuste no se dibuja la barra ni se baja ningún feed. */
 export const SHOW_MEETS_KEY = 'gogoboy.showMeets'
 
+/** Apagado por defecto: en Hoy las hechas se quedan donde están. */
+export const COMPLETED_LAST_ON_HOME_KEY = 'gogoboy.completedLastOnHome'
+
 type StorageRead = (key: string) => string | null
 
 export function readShowListOnTask(read: StorageRead): boolean {
@@ -22,6 +25,10 @@ export function readSuggestDueToday(read: StorageRead): boolean {
 
 export function readShowMeets(read: StorageRead): boolean {
   return read(SHOW_MEETS_KEY) === 'true'
+}
+
+export function readCompletedLastOnHome(read: StorageRead): boolean {
+  return read(COMPLETED_LAST_ON_HOME_KEY) === 'true'
 }
 
 /** Nombre bajo el título. Sin ajuste, o sin lista, no hay línea. */

@@ -137,12 +137,24 @@
   flex-direction: column;
   align-items: stretch;
   gap: 2px;
-  padding: 14px 16px 14px 22px;
+  padding: 0 12px 0 0;
   border-radius: var(--r-md);
   border: 1.5px solid transparent;
   background-image: var(--grad-wash);
   /* El transform lo maneja dnd-kit al reordenar; el hover no puede pelearle. */
   transition: box-shadow 140ms ease;
+}
+
+.insertLine {
+  position: absolute;
+  left: 44px;
+  right: 12px;
+  top: -5px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  pointer-events: none;
+  z-index: 2;
 }
 
 .todayRowMain {
@@ -151,10 +163,32 @@
   align-items: center;
   gap: var(--space-3);
   min-width: 0;
-  cursor: grab;
+  min-height: 52px;
 }
 
-.todayRowMain:active {
+/* Solo esta franja arrastra. El titulo, el estado y el ojito siguen siendo click. */
+.dragHandle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 44px;
+  min-height: 44px;
+  flex: none;
+  align-self: stretch;
+  padding: 0 4px 0 0;
+  color: var(--ink-faint);
+  cursor: grab;
+  touch-action: none;
+}
+
+.dragHandle:hover {
+  color: var(--ink-soft);
+  background: color-mix(in srgb, var(--surface) 42%, transparent);
+}
+
+button.dragHandle:active:not(:disabled) {
+  transform: none;
   cursor: grabbing;
 }
 
@@ -181,7 +215,7 @@
   place-items: center;
   width: 26px;
   height: 26px;
-  margin: 0 -4px 0 -6px;
+  margin: 0;
   border-radius: var(--r-pill);
   color: var(--ink-faint);
   flex-shrink: 0;
@@ -233,7 +267,7 @@
 }
 
 .todayRow > .subtasks {
-  margin: 4px 0 2px 34px;
+  margin: 4px 0 8px 56px;
 }
 
 .rowEye:hover {
@@ -523,6 +557,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  width: max-content;
+  max-width: 100%;
   padding: 12px 18px;
   border-radius: var(--r-lg);
   background: var(--surface);
@@ -588,7 +624,7 @@
 
   .todayRow {
     gap: var(--space-2);
-    padding: 12px 12px 12px 20px;
+    padding: 0 8px 0 0;
   }
 
   .groupToggle {

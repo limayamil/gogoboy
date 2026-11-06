@@ -5,6 +5,7 @@ import {
   newTaskDefaultsForDay,
   startOfWeek,
   toDateKey,
+  weekdayName,
   weekKeys,
 } from './dates'
 
@@ -59,6 +60,14 @@ describe('weekKeys', () => {
       '2026-10-03',
       '2026-10-04',
     ])
+  })
+})
+
+describe('weekdayName', () => {
+  it('nombra el día completo a partir de la fecha', () => {
+    expect(weekdayName('2026-11-02')).toBe('Lunes')
+    expect(weekdayName('2026-11-06')).toBe('Viernes')
+    expect(weekdayName('2026-11-08')).toBe('Domingo')
   })
 })
 

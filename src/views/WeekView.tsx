@@ -17,13 +17,13 @@ import { StatusToggle } from '../components/StatusToggle'
 import { IconChevronLeft, IconChevronRight, IconEye, IconEyeOff, IconPlus } from '../components/Icons'
 import { useColorOf } from '../lib/palette'
 import {
-  DAY_NAMES,
   addDays,
   formatDayNumber,
   formatShortDate,
   formatWeekRange,
   newTaskDefaultsForDay,
   todayKey,
+  weekdayName,
   weekKeys,
 } from '../lib/dates'
 import { useAppState, useUpdateTask } from '../lib/store'
@@ -156,11 +156,10 @@ export function WeekView() {
           id="week-grid"
           className={`${styles.grid} ${showWeekend ? styles.gridWithWeekend : ''} stagger`}
         >
-          {visibleDays.map((day, index) => (
+          {visibleDays.map((day) => (
             <DayColumn
               key={day}
               dayKey={day}
-              label={DAY_NAMES[index]}
               tasks={byDay.get(day) ?? []}
               categories={categories}
             />
@@ -177,12 +176,10 @@ export function WeekView() {
 
 function DayColumn({
   dayKey,
-  label,
   tasks,
   categories,
 }: {
   dayKey: string
-  label: string
   tasks: Task[]
   categories: Category[]
 }) {
@@ -196,19 +193,17 @@ function DayColumn({
       className={`${styles.day} ${isOver ? styles.dayOver : ''} ${isToday ? styles.dayToday : ''}`}
     >
       <header className={styles.dayHeader}>
-        <span className={styles.dayNameGroup}>
-          <span className={styles.dayName}>{label}</span>
-          <button
-            type="button"
-            className={styles.dayAdd}
-            aria-label={`Nueva tarea para el ${formatShortDate(dayKey)}`}
-            title="Nueva tarea"
-            onClick={() => openTask({ taskId: null, defaults: newTaskDefaultsForDay(dayKey) })}
-          >
-            <IconPlus size={14} />
-          </button>
-        </span>
+        <span className={styles.dayName}>{weekdayName(dayKey)}</span>
         <span className={styles.dayNumber}>{formatDayNumber(dayKey)}</span>
+        <button
+          type="button"
+          className={styles.dayAdd}
+          aria-label={`Nueva tarea para el ${formatShortDate(dayKey)}`}
+          title="Nueva tarea"
+          onClick={() => openTask({ taskId: null, defaults: newTaskDefaultsForDay(dayKey) })}
+        >
+          <IconPlus size={14} />
+        </button>
       </header>
 
       <ul className={styles.dayList}>

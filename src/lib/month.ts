@@ -7,7 +7,7 @@ import { APP_TIME_ZONE, dateKeyInAppZone, mondayOf } from '../shared/expiry'
  * calendario no tiene que adelantarse con el reloj del host.
  */
 
-/** Más tareas siguen en el modal: el casillero muestra como máximo tres puntos. */
+/** Cuántos puntos cabían cuando el mes marcaba cantidad y no el título. */
 export const CALENDAR_DOT_CAP = 3
 
 export interface CalendarCell {

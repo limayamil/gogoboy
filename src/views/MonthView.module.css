@@ -94,14 +94,16 @@
 .cell {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: flex-start;
-  gap: 6px;
+  gap: 4px;
+  min-width: 0;
   min-height: 72px;
-  padding: 10px 2px 8px;
+  padding: 8px 6px 6px;
   border-radius: var(--r-md);
   background: color-mix(in srgb, var(--surface-2) 65%, transparent);
   color: var(--ink);
+  text-align: left;
 }
 
 .cell:hover {
@@ -127,28 +129,43 @@
 }
 
 .number {
-  font-size: 15px;
+  align-self: flex-start;
+  margin-left: 2px;
+  font-size: 13px;
   font-weight: 800;
   line-height: 1;
 }
 
-.dots {
+.pills {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  height: 8px;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
 }
 
-.dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--accent);
+.pill {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.outside .dot {
-  opacity: 0.55;
+.pillDone {
+  text-decoration: line-through;
+  opacity: 0.72;
+}
+
+.outside .pill {
+  opacity: 0.6;
 }
 
 .count,
@@ -254,12 +271,13 @@
   }
 
   .number {
-    font-size: 13px;
+    font-size: 12px;
   }
 
-  .dot {
-    width: 6px;
-    height: 6px;
+  .pill {
+    padding: 0 4px;
+    font-size: 10px;
+    line-height: 14px;
   }
 
   .task {

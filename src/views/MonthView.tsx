@@ -7,7 +7,6 @@ import { TaskListLabel } from '../components/TaskListLabel'
 import { DAY_NAMES, formatDayNumber, formatTodayHeading, fromDateKey } from '../lib/dates'
 import {
   calendarDayLabel,
-  calendarDotCount,
   calendarMonthInZone,
   formatMonthTitle,
   groupTasksByDeadline,
@@ -25,7 +24,7 @@ const STATUS_LABEL: Record<Status, string> = {
   hecha: 'Hecha',
 }
 
-/** Mes calendario. Los puntos salen de los deadlines que ya están en el estado. */
+/** Mes calendario. Cada tarea con fecha es una pastilla con el título. */
 export function MonthView() {
   const { data, isPending, error } = useAppState()
   const [cursor, setCursor] = useState(() => {
@@ -36,6 +35,7 @@ export function MonthView() {
 
   const tasks = data?.tasks ?? []
   const categories = data?.categories ?? []
+  const colorOf = useColorOf()
   const today = calendarMonthInZone(new Date()).today
   const days = useMemo(() => monthGrid(cursor.year, cursor.month), [cursor])
   const byDay = useMemo(() => groupTasksByDeadline(tasks), [tasks])
@@ -96,7 +96,7 @@ export function MonthView() {
         </div>
         <div className={styles.grid} role="group" aria-label={title}>
           {days.map((day) => {
-            const count = byDay.get(day.key)?.length ?? 0
+            const dayTasks = byDay.get(day.key) ?? []
             const isToday = day.key === today
             return (
               <button
@@ -104,15 +104,28 @@ export function MonthView() {
                 type="button"
                 className={`${styles.cell} ${day.inMonth ? '' : styles.outside} ${isToday ? styles.today : ''}`}
                 aria-current={isToday ? 'date' : undefined}
-                aria-label={calendarDayLabel(day.key, count)}
+                aria-label={calendarDayLabel(day.key, dayTasks.length)}
                 onClick={() => setOpenDay(day.key)}
               >
                 <span className={styles.number}>{formatDayNumber(day.key)}</span>
-                <span className={styles.dots} aria-hidden="true">
-                  {Array.from({ length: calendarDotCount(count) }, (_, index) => (
-                    <span key={index} className={styles.dot} />
-                  ))}
-                </span>
+                {dayTasks.length > 0 ? (
+                  <span className={styles.pills}>
+                    {dayTasks.map((task) => {
+                      const category = categories.find((item) => item.id === task.categoryId)
+                      const color = colorOf(category?.colorKey)
+                      return (
+                        <span
+                          key={task.id}
+                          className={`${styles.pill} ${task.status === 'hecha' ? styles.pillDone : ''}`}
+                          style={{ background: color.soft, color: color.ink }}
+                          title={task.title}
+                        >
+                          {task.title}
+                        </span>
+                      )
+                    })}
+                  </span>
+                ) : null}
               </button>
             )
           })}

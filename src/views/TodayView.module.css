@@ -61,6 +61,14 @@
   color: var(--ink-faint);
 }
 
+.todayActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
 .hiddenToggle {
   display: flex;
   align-items: center;
@@ -74,6 +82,21 @@
   font-size: 13px;
   font-weight: 700;
   transition: color var(--dur-fast) ease, transform var(--dur-fast) var(--ease-out);
+}
+
+.dayAdd {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+
+.dayAdd:hover {
+  color: var(--accent);
 }
 
 .suggest {

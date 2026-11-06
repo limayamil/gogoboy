@@ -8,6 +8,7 @@ import { ThemeProvider } from './app/theme'
 import { TodayView } from './views/TodayView'
 import { CategoriesView } from './views/CategoriesView'
 import { WeekView } from './views/WeekView'
+import { MonthView } from './views/MonthView'
 import { NotesView } from './views/NotesView'
 import { StatsView } from './views/StatsView'
 import { BandejaView } from './views/BandejaView'
@@ -42,6 +43,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/" element={<TodayView />} />
                 <Route path="/categorias" element={<CategoriesView />} />
                 <Route path="/semana" element={<WeekView />} />
+                <Route path="/mes" element={<MonthView />} />
                 <Route path="/notas" element={<NotesView />} />
                 <Route path="/estadisticas" element={<StatsView />} />
                 <Route path="/bandeja" element={<BandejaView />} />

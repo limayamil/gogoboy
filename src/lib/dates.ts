@@ -6,6 +6,22 @@
 
 export const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const
 
+/** Nombre completo, de lunes a domingo. Semana lo usa en el encabezado de la columna. */
+export const WEEKDAY_NAMES = [
+  'Lunes',
+  'Martes',
+  'Miércoles',
+  'Jueves',
+  'Viernes',
+  'Sábado',
+  'Domingo',
+] as const
+
+export function weekdayName(dayKey: string): string {
+  const weekday = (fromDateKey(dayKey).getDay() + 6) % 7
+  return WEEKDAY_NAMES[weekday]
+}
+
 export function toDateKey(date: Date): string {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -66,4 +82,12 @@ export function formatTodayHeading(date: Date): string {
     month: 'long',
   })
   return raw.charAt(0).toUpperCase() + raw.slice(1)
+}
+
+/**
+ * Lo que el + de una columna de Semana le prellena al modal de tarea nueva.
+ * Solo la fecha límite: el resto queda como cuando se abre desde el FAB.
+ */
+export function newTaskDefaultsForDay(dayKey: string): { deadline: string } {
+  return { deadline: dayKey }
 }

@@ -314,7 +314,7 @@
   text-align: center;
 }
 
-/* Con seis pestañas el texto no entra en el centro del header antes que el
+/* Con siete pestañas el texto no entra en el centro del header antes que el
    layout mobile: se esconden las labels y quedan los iconos. El badge no: si
    no, la cantidad de la bandeja desaparece junto con la palabra. */
 @media (max-width: 1480px) {
@@ -348,11 +348,19 @@
   }
 
   .tabs {
-    justify-self: center;
+    justify-self: stretch;
+    min-width: 0;
     max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .tab {
+    flex-shrink: 0;
     padding: 10px 11px;
   }
 

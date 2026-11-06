@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Fabs } from '../components/Fabs'
-import { IconCalendar, IconChart, IconGrid, IconInbox, IconLogout, IconMoon, IconNote, IconSun } from '../components/Icons'
+import { IconCalendar, IconChart, IconGrid, IconInbox, IconLogout, IconMonth, IconMoon, IconNote, IconSun } from '../components/Icons'
 import { MeetsSidebar } from '../components/MeetsSidebar'
 import { SettingsMenu } from '../components/SettingsMenu'
 import { authClient } from '../lib/auth'
@@ -18,6 +18,7 @@ const TABS = [
   { to: '/', label: 'Hoy', Icon: IconSun, badge: false },
   { to: '/categorias', label: 'Categorías', Icon: IconGrid, badge: false },
   { to: '/semana', label: 'Semana', Icon: IconCalendar, badge: false },
+  { to: '/mes', label: 'Mes', Icon: IconMonth, badge: false },
   { to: '/notas', label: 'Notas', Icon: IconNote, badge: false },
   { to: '/estadisticas', label: 'Estadísticas', Icon: IconChart, badge: false },
   { to: '/bandeja', label: 'Bandeja', Icon: IconInbox, badge: true },
@@ -27,6 +28,7 @@ const TITLES: Record<string, string> = {
   '/': 'Hoy · GoGoBoy',
   '/categorias': 'Categorías · GoGoBoy',
   '/semana': 'Semana · GoGoBoy',
+  '/mes': 'Mes · GoGoBoy',
   '/notas': 'Notas · GoGoBoy',
   '/estadisticas': 'Estadísticas · GoGoBoy',
   '/bandeja': 'Bandeja · GoGoBoy',

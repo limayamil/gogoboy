@@ -8,6 +8,7 @@ import {
   groupTasksByDeadline,
   monthGrid,
   shiftMonth,
+  withoutWeekend,
 } from './month'
 
 describe('calendarMonthInZone', () => {
@@ -33,6 +34,15 @@ describe('monthGrid', () => {
       key: '2026-11-30',
       inMonth: true,
     })
+  })
+
+  it('esconde sábado y domingo y deja las semanas alineadas de lunes a viernes', () => {
+    const weekdays = withoutWeekend(monthGrid(2026, 11))
+    expect(weekdays).toHaveLength(30)
+    expect(weekdays[0]).toEqual({ key: '2026-10-26', inMonth: false })
+    expect(weekdays.map((cell) => cell.key)).not.toContain('2026-11-01')
+    expect(weekdays.map((cell) => cell.key)).not.toContain('2026-11-07')
+    expect(weekdays.map((cell) => cell.key)).toContain('2026-11-06')
   })
 })
 

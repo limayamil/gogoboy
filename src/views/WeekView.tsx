@@ -14,7 +14,7 @@ import { useModals } from '../app/modals'
 import { ErrorState, LoadingState } from '../components/Feedback'
 import { TaskListLabel } from '../components/TaskListLabel'
 import { StatusToggle } from '../components/StatusToggle'
-import { IconChevronLeft, IconChevronRight, IconEye, IconEyeOff } from '../components/Icons'
+import { IconChevronLeft, IconChevronRight, IconEye, IconEyeOff, IconPlus } from '../components/Icons'
 import { useColorOf } from '../lib/palette'
 import {
   DAY_NAMES,
@@ -22,6 +22,7 @@ import {
   formatDayNumber,
   formatShortDate,
   formatWeekRange,
+  newTaskDefaultsForDay,
   todayKey,
   weekKeys,
 } from '../lib/dates'
@@ -186,6 +187,7 @@ function DayColumn({
   categories: Category[]
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: dayKey })
+  const { openTask } = useModals()
   const isToday = dayKey === todayKey()
 
   return (
@@ -194,7 +196,18 @@ function DayColumn({
       className={`${styles.day} ${isOver ? styles.dayOver : ''} ${isToday ? styles.dayToday : ''}`}
     >
       <header className={styles.dayHeader}>
-        <span className={styles.dayName}>{label}</span>
+        <span className={styles.dayNameGroup}>
+          <span className={styles.dayName}>{label}</span>
+          <button
+            type="button"
+            className={styles.dayAdd}
+            aria-label={`Nueva tarea para el ${formatShortDate(dayKey)}`}
+            title="Nueva tarea"
+            onClick={() => openTask({ taskId: null, defaults: newTaskDefaultsForDay(dayKey) })}
+          >
+            <IconPlus size={14} />
+          </button>
+        </span>
         <span className={styles.dayNumber}>{formatDayNumber(dayKey)}</span>
       </header>
 

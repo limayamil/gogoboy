@@ -169,9 +169,17 @@
 
 .dayHeader {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
+  gap: 6px;
   padding: 0 2px var(--space-3);
+}
+
+.dayNameGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
 }
 
 .dayName {
@@ -180,6 +188,22 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-faint);
+}
+
+.dayAdd {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+
+.dayAdd:hover {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
 }
 
 .dayNumber {

@@ -35,6 +35,15 @@ export const IconCalendar = ({ size = 20, className }: Props) => (
   </svg>
 )
 
+/** Mes: la misma caja del calendario, con la grilla de días adentro. */
+export const IconMonth = ({ size = 20, className }: Props) => (
+  <svg {...base(size)} className={className} aria-hidden="true">
+    <rect x="3" y="4" width="18" height="17" rx="3" />
+    <path d="M3 9h18M8 2.5v3M16 2.5v3" />
+    <path d="M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01M16 17h.01" />
+  </svg>
+)
+
 /** Misma caja para 1, 2 o 3 barras: el segmento no cambia de ancho al elegir. */
 export const IconSignalBars = ({
   bars,

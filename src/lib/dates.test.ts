@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { DAY_NAMES, formatTodayHeading, startOfWeek, toDateKey, weekKeys } from './dates'
+import {
+  DAY_NAMES,
+  formatTodayHeading,
+  newTaskDefaultsForDay,
+  startOfWeek,
+  toDateKey,
+  weekKeys,
+} from './dates'
 
 describe('DAY_NAMES', () => {
   it('lleva tildes en miércoles y sábado', () => {
@@ -52,6 +59,12 @@ describe('weekKeys', () => {
       '2026-10-03',
       '2026-10-04',
     ])
+  })
+})
+
+describe('newTaskDefaultsForDay', () => {
+  it('prellena solo la fecha límite con el día de la columna', () => {
+    expect(newTaskDefaultsForDay('2026-11-06')).toEqual({ deadline: '2026-11-06' })
   })
 })
 

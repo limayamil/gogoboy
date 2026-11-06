@@ -67,3 +67,11 @@ export function formatTodayHeading(date: Date): string {
   })
   return raw.charAt(0).toUpperCase() + raw.slice(1)
 }
+
+/**
+ * Lo que el + de una columna de Semana le prellena al modal de tarea nueva.
+ * Solo la fecha límite: el resto queda como cuando se abre desde el FAB.
+ */
+export function newTaskDefaultsForDay(dayKey: string): { deadline: string } {
+  return { deadline: dayKey }
+}

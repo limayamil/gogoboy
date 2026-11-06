@@ -227,6 +227,7 @@ function TodayPanel({
   error: unknown
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: HOY_PANEL_ID })
+  const { openTask } = useModals()
   const today = formatTodayHeading(new Date())
   const comma = today.indexOf(',')
   const weekday = comma === -1 ? today : today.slice(0, comma)
@@ -242,7 +243,18 @@ function TodayPanel({
         {/* El nav ya dice Hoy: el heading es la fecha, con el dia en coral
            como el saludo amable de las referencias, sin copiar su copy. */}
         <h1 className={styles.todayTitle}>
-          <span className={styles.todayFriendly}>{weekday}</span>
+          <span className={styles.todayName}>
+            <span className={styles.todayFriendly}>{weekday}</span>
+            <button
+              type="button"
+              className={styles.dayAdd}
+              onClick={() => openTask({ taskId: null })}
+              aria-label="Nueva tarea"
+              title="Nueva tarea"
+            >
+              <IconPlus size={16} />
+            </button>
+          </span>
           {rest ? <span className={styles.todayRest}>{rest}</span> : null}
         </h1>
 

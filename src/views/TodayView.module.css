@@ -48,9 +48,31 @@
   line-height: 1.15;
 }
 
+.todayName {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .todayFriendly {
   font-weight: 700;
   color: var(--accent);
+}
+
+.dayAdd {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  flex-shrink: 0;
+}
+
+.dayAdd:hover {
+  background: var(--accent);
+  color: #fff;
 }
 
 .todayRest {

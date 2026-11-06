@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { formatMeetTime, formatMeetsDate, meetMoment } from '../lib/meets'
-import { useMeetsToday } from '../lib/meet-store'
+import { useConnectGoogle, useMeetsToday } from '../lib/meet-store'
 import { useColorOf } from '../lib/palette'
 import { errorMessage } from '../lib/toast'
 import type { MeetCalendarStatus, MeetEvent } from '../shared/types'
@@ -26,6 +26,7 @@ export function MeetsSidebar({ open, onOpenChange }: { open: boolean; onOpenChan
   const colorOf = useColorOf()
   const now = useMinuteClock()
   const [selected, setSelected] = useState<MeetEvent | null>(null)
+  const connectGoogle = useConnectGoogle()
   const { refetch } = meets
 
   useEffect(() => {
@@ -97,6 +98,16 @@ export function MeetsSidebar({ open, onOpenChange }: { open: boolean; onOpenChan
             <span>
               No se pudo cargar <strong>{calendar.name}</strong>: {calendar.error}
             </span>
+            {calendar.reconnect ? (
+              <button
+                type="button"
+                className={styles.reconnect}
+                onClick={() => connectGoogle.mutate()}
+                disabled={connectGoogle.isPending}
+              >
+                Reconectar
+              </button>
+            ) : null}
           </p>
         ))}
 

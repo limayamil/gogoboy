@@ -2,6 +2,8 @@ import type {
   AppState,
   Attachment,
   Category,
+  GoogleAccountsResponse,
+  GoogleCalendarInput,
   MeetCalendar,
   MeetCalendarInput,
   MeetsToday,
@@ -124,4 +126,14 @@ export const api = {
   updateMeetCalendar: (id: string, patch: Partial<MeetCalendarInput>) =>
     request<MeetCalendar>(`/meet-calendars/${id}`, { method: 'PATCH', body: json(patch) }),
   deleteMeetCalendar: (id: string) => request<unknown>(`/meet-calendars/${id}`, { method: 'DELETE' }),
+
+  getGoogleAccounts: () => request<GoogleAccountsResponse>('/google/accounts'),
+  /** Devuelve la URL de Google; el servidor deja una cookie que el callback exige. */
+  startGoogleConnect: () => request<{ url: string }>('/google/connect', { method: 'POST' }),
+  disconnectGoogleAccount: (id: string) => request<unknown>(`/google-accounts/${id}`, { method: 'DELETE' }),
+  addGoogleCalendar: (input: GoogleCalendarInput) =>
+    request<{ id: string }>('/google-calendars', { method: 'POST', body: json(input) }),
+  updateGoogleCalendar: (id: string, patch: { name?: string; colorKey?: string }) =>
+    request<{ id: string }>(`/google-calendars/${id}`, { method: 'PATCH', body: json(patch) }),
+  removeGoogleCalendar: (id: string) => request<unknown>(`/google-calendars/${id}`, { method: 'DELETE' }),
 }

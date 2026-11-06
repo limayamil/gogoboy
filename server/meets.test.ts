@@ -194,8 +194,8 @@ describe('/api/meets', () => {
       'Llamada tarde',
     ])
     expect(payload.calendars).toEqual([
-      { id: WORK.id, name: 'Trabajo', colorKey: 'lavanda', error: null },
-      { id: broken.id, name: 'Personal', colorKey: 'lavanda', error: 'Google respondió 500' },
+      { id: WORK.id, name: 'Trabajo', colorKey: 'lavanda', error: null, reconnect: false },
+      { id: broken.id, name: 'Personal', colorKey: 'lavanda', error: 'Google respondió 500', reconnect: false },
     ])
   })
 

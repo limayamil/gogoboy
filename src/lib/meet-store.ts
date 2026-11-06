@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { MeetCalendarInput } from '../shared/types'
+import type { GoogleCalendarInput, MeetCalendarInput } from '../shared/types'
 import { api } from './api'
 
 /**
@@ -8,6 +8,7 @@ import { api } from './api'
  */
 const MEETS_KEY = ['meets'] as const
 const CALENDARS_KEY = ['meet-calendars'] as const
+const GOOGLE_KEY = ['google-accounts'] as const
 
 export const MEETS_REFRESH_MS = 5 * 60_000
 
@@ -30,6 +31,7 @@ function useInvalidateMeets() {
   const client = useQueryClient()
   return () => {
     void client.invalidateQueries({ queryKey: CALENDARS_KEY })
+    void client.invalidateQueries({ queryKey: GOOGLE_KEY })
     void client.invalidateQueries({ queryKey: MEETS_KEY })
   }
 }
@@ -51,4 +53,50 @@ export function useUpdateMeetCalendar() {
 export function useDeleteMeetCalendar() {
   const onSettled = useInvalidateMeets()
   return useMutation({ mutationFn: (id: string) => api.deleteMeetCalendar(id), onSettled })
+}
+
+/** Espera la lista nueva: así el `isPending` de la mutación cubre hasta que el tilde refleja el cambio. */
+function useInvalidateGoogle() {
+  const client = useQueryClient()
+  return () => {
+    void client.invalidateQueries({ queryKey: MEETS_KEY })
+    return client.invalidateQueries({ queryKey: GOOGLE_KEY })
+  }
+}
+
+/** Pide la lista a Google en cada apertura de Ajustes: no hace falta tenerla fresca antes. */
+export function useGoogleAccounts() {
+  return useQuery({ queryKey: GOOGLE_KEY, queryFn: api.getGoogleAccounts, staleTime: 0 })
+}
+
+/** Sale de la app hacia Google; vuelve por /api/google/callback a `/?google=…`. */
+export function useConnectGoogle() {
+  return useMutation({
+    mutationFn: api.startGoogleConnect,
+    onSuccess: ({ url }) => window.location.assign(url),
+  })
+}
+
+export function useDisconnectGoogle() {
+  const onSettled = useInvalidateGoogle()
+  return useMutation({ mutationFn: (id: string) => api.disconnectGoogleAccount(id), onSettled })
+}
+
+export function useAddGoogleCalendar() {
+  const onSettled = useInvalidateGoogle()
+  return useMutation({ mutationFn: (input: GoogleCalendarInput) => api.addGoogleCalendar(input), onSettled })
+}
+
+export function useUpdateGoogleCalendar() {
+  const onSettled = useInvalidateGoogle()
+  return useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: { name?: string; colorKey?: string } }) =>
+      api.updateGoogleCalendar(id, patch),
+    onSettled,
+  })
+}
+
+export function useRemoveGoogleCalendar() {
+  const onSettled = useInvalidateGoogle()
+  return useMutation({ mutationFn: (id: string) => api.removeGoogleCalendar(id), onSettled })
 }

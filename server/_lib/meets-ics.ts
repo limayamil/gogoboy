@@ -48,6 +48,12 @@ export function meetsDay(now: Date): DayWindow {
   return { date, start, end: wallToInstant([y, m, d + 1, 0, 0, 0], MEETS_TIME_ZONE) }
 }
 
+/** Medianoche GMT-3 de un día calendario 'YYYY-MM-DD', en ms. */
+export function meetsMidnight(date: string): number {
+  const [y, m, d] = date.split('-').map(Number)
+  return wallToInstant([y, m, d, 0, 0, 0], MEETS_TIME_ZONE)
+}
+
 type Wall = [year: number, month: number, day: number, hour: number, minute: number, second: number]
 
 function offsetAt(instant: number, timeZone: string): number {

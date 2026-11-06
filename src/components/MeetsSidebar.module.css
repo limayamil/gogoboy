@@ -110,6 +110,21 @@
   margin-top: 1px;
 }
 
+.problem span {
+  flex: 1;
+  min-width: 0;
+}
+
+.reconnect {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .list {
   display: flex;
   flex-direction: column;

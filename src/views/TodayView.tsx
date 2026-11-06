@@ -227,6 +227,7 @@ function TodayPanel({
   error: unknown
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: HOY_PANEL_ID })
+  const { openTask } = useModals()
   const today = formatTodayHeading(new Date())
   const comma = today.indexOf(',')
   const weekday = comma === -1 ? today : today.slice(0, comma)
@@ -246,18 +247,29 @@ function TodayPanel({
           {rest ? <span className={styles.todayRest}>{rest}</span> : null}
         </h1>
 
-        {hiddenCount > 0 ? (
+        <div className={styles.todayActions}>
+          {hiddenCount > 0 ? (
+            <button
+              type="button"
+              className={styles.hiddenToggle}
+              onClick={onToggleHidden}
+              title={showHidden ? 'Ocultar tareas escondidas' : `Ver ${hiddenCount} oculta(s)`}
+              aria-label={showHidden ? 'Ocultar tareas escondidas' : `Ver ${hiddenCount} oculta(s)`}
+            >
+              {showHidden ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+              <span>{showHidden ? 'Ocultar' : hiddenCount}</span>
+            </button>
+          ) : null}
           <button
             type="button"
-            className={styles.hiddenToggle}
-            onClick={onToggleHidden}
-            title={showHidden ? 'Ocultar tareas escondidas' : `Ver ${hiddenCount} oculta(s)`}
-            aria-label={showHidden ? 'Ocultar tareas escondidas' : `Ver ${hiddenCount} oculta(s)`}
+            className={styles.dayAdd}
+            aria-label="Nueva tarea"
+            title="Nueva tarea"
+            onClick={() => openTask({ taskId: null })}
           >
-            {showHidden ? <IconEyeOff size={18} /> : <IconEye size={18} />}
-            <span>{showHidden ? 'Ocultar' : hiddenCount}</span>
+            <IconPlus size={16} />
           </button>
-        ) : null}
+        </div>
       </header>
 
       {suggestions.length > 0 ? <SuggestStrip tasks={suggestions} /> : null}
@@ -422,7 +434,6 @@ function Rail({
   onAddTask: (categoryId: string | null) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: LIST_PANEL_ID })
-  const { openTask } = useModals()
   const visibleUncategorized = tasksForHomeRail(uncategorized, hideCompleted)
   const hideLabel = hideCompleted ? 'Ver tareas hechas' : 'Ocultar tareas hechas'
 
@@ -441,15 +452,6 @@ function Rail({
           >
             {hideCompleted ? <IconEye size={15} /> : <IconEyeOff size={15} />}
             {hideCompleted ? 'Ver hechas' : 'Ocultar hechas'}
-          </button>
-          <button
-            type="button"
-            className={styles.dayAdd}
-            aria-label="Nueva tarea"
-            title="Nueva tarea"
-            onClick={() => openTask({ taskId: null })}
-          >
-            <IconPlus size={16} />
           </button>
           <button type="button" className={styles.railAdd} onClick={onAddCategory}>
             <IconPlus size={15} />

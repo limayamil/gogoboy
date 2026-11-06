@@ -433,15 +433,6 @@ function Rail({
         <div className={styles.railActions}>
           <button
             type="button"
-            className={styles.dayAdd}
-            aria-label="Nueva tarea"
-            title="Nueva tarea"
-            onClick={() => openTask({ taskId: null })}
-          >
-            <IconPlus size={16} />
-          </button>
-          <button
-            type="button"
             className={styles.railAdd}
             aria-pressed={hideCompleted}
             aria-label={hideLabel}
@@ -450,6 +441,15 @@ function Rail({
           >
             {hideCompleted ? <IconEye size={15} /> : <IconEyeOff size={15} />}
             {hideCompleted ? 'Ver hechas' : 'Ocultar hechas'}
+          </button>
+          <button
+            type="button"
+            className={styles.dayAdd}
+            aria-label="Nueva tarea"
+            title="Nueva tarea"
+            onClick={() => openTask({ taskId: null })}
+          >
+            <IconPlus size={16} />
           </button>
           <button type="button" className={styles.railAdd} onClick={onAddCategory}>
             <IconPlus size={15} />

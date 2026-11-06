@@ -27,12 +27,11 @@
 
 .todayHeader {
   display: flex;
-  align-items: center;
-  justify-content: flex-start;
+  align-items: flex-start;
+  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 0.35em;
+  gap: var(--space-3);
   margin-bottom: var(--space-5);
-  font-size: clamp(26px, 3.2vw, 36px);
 }
 
 .todayTitle {
@@ -40,6 +39,7 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.28em 0.35em;
+  flex: 1;
   min-width: 0;
   font-size: clamp(26px, 3.2vw, 36px);
   font-weight: 700;
@@ -59,6 +59,14 @@
   font-style: normal;
   letter-spacing: -0.01em;
   color: var(--ink-faint);
+}
+
+.todayActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .hiddenToggle {

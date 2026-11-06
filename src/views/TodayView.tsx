@@ -247,27 +247,29 @@ function TodayPanel({
           {rest ? <span className={styles.todayRest}>{rest}</span> : null}
         </h1>
 
-        <button
-          type="button"
-          className={styles.dayAdd}
-          aria-label="Nueva tarea"
-          title="Nueva tarea"
-          onClick={() => openTask({ taskId: null })}
-        >
-          <IconPlus size={16} />
-        </button>
-        {hiddenCount > 0 ? (
+        <div className={styles.todayActions}>
           <button
             type="button"
-            className={styles.hiddenToggle}
-            onClick={onToggleHidden}
-            title={showHidden ? 'Ocultar tareas escondidas' : `Ver ${hiddenCount} oculta(s)`}
-            aria-label={showHidden ? 'Ocultar tareas escondidas' : `Ver ${hiddenCount} oculta(s)`}
+            className={styles.dayAdd}
+            aria-label="Nueva tarea"
+            title="Nueva tarea"
+            onClick={() => openTask({ taskId: null })}
           >
-            {showHidden ? <IconEyeOff size={18} /> : <IconEye size={18} />}
-            <span>{showHidden ? 'Ocultar' : hiddenCount}</span>
+            <IconPlus size={16} />
           </button>
-        ) : null}
+          {hiddenCount > 0 ? (
+            <button
+              type="button"
+              className={styles.hiddenToggle}
+              onClick={onToggleHidden}
+              title={showHidden ? 'Ocultar tareas escondidas' : `Ver ${hiddenCount} oculta(s)`}
+              aria-label={showHidden ? 'Ocultar tareas escondidas' : `Ver ${hiddenCount} oculta(s)`}
+            >
+              {showHidden ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+              <span>{showHidden ? 'Ocultar' : hiddenCount}</span>
+            </button>
+          ) : null}
+        </div>
       </header>
 
       {suggestions.length > 0 ? <SuggestStrip tasks={suggestions} /> : null}

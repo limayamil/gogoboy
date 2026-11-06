@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useModals } from '../app/modals'
 import { ErrorState, LoadingState } from '../components/Feedback'
-import { IconChevronLeft, IconChevronRight } from '../components/Icons'
+import { IconChevronLeft, IconChevronRight, IconEye, IconEyeOff } from '../components/Icons'
 import { Modal } from '../components/Modal'
 import { TaskListLabel } from '../components/TaskListLabel'
 import { DAY_NAMES, formatDayNumber, formatTodayHeading, fromDateKey } from '../lib/dates'
@@ -12,6 +12,7 @@ import {
   groupTasksByDeadline,
   monthGrid,
   shiftMonth,
+  withoutWeekend,
 } from '../lib/month'
 import { useColorOf } from '../lib/palette'
 import { useAppState } from '../lib/store'
@@ -32,12 +33,17 @@ export function MonthView() {
     return { year, month }
   })
   const [openDay, setOpenDay] = useState<string | null>(null)
+  const [showWeekend, setShowWeekend] = useState(false)
 
   const tasks = data?.tasks ?? []
   const categories = data?.categories ?? []
   const colorOf = useColorOf()
   const today = calendarMonthInZone(new Date()).today
-  const days = useMemo(() => monthGrid(cursor.year, cursor.month), [cursor])
+  const days = useMemo(() => {
+    const grid = monthGrid(cursor.year, cursor.month)
+    return showWeekend ? grid : withoutWeekend(grid)
+  }, [cursor, showWeekend])
+  const weekdayNames = showWeekend ? DAY_NAMES : DAY_NAMES.slice(0, 5)
   const byDay = useMemo(() => groupTasksByDeadline(tasks), [tasks])
   const withoutDeadline = tasks.filter((task) => !task.deadline && task.status !== 'hecha').length
   const title = formatMonthTitle(cursor.year, cursor.month)
@@ -55,33 +61,48 @@ export function MonthView() {
           ) : null}
         </div>
 
-        <div className={styles.nav}>
+        <div className={styles.headerActions}>
           <button
             type="button"
-            className={styles.navButton}
-            onClick={() => setCursor((current) => shiftMonth(current.year, current.month, -1))}
-            aria-label="Mes anterior"
+            className={`${styles.weekendToggle} ${showWeekend ? styles.weekendToggleActive : ''}`}
+            onClick={() => setShowWeekend((visible) => !visible)}
+            aria-expanded={showWeekend}
+            aria-controls="month-grid"
+            title={showWeekend ? 'Ocultar fin de semana' : 'Ver fin de semana'}
+            aria-label={showWeekend ? 'Ocultar fin de semana' : 'Ver fin de semana'}
           >
-            <IconChevronLeft size={18} />
+            {showWeekend ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+            <span className={styles.weekendLabel}>Fin de semana</span>
           </button>
-          <button
-            type="button"
-            className={styles.navToday}
-            onClick={() => {
-              const { year, month } = calendarMonthInZone(new Date())
-              setCursor({ year, month })
-            }}
-          >
-            Este mes
-          </button>
-          <button
-            type="button"
-            className={styles.navButton}
-            onClick={() => setCursor((current) => shiftMonth(current.year, current.month, 1))}
-            aria-label="Mes siguiente"
-          >
-            <IconChevronRight size={18} />
-          </button>
+
+          <div className={styles.nav}>
+            <button
+              type="button"
+              className={styles.navButton}
+              onClick={() => setCursor((current) => shiftMonth(current.year, current.month, -1))}
+              aria-label="Mes anterior"
+            >
+              <IconChevronLeft size={18} />
+            </button>
+            <button
+              type="button"
+              className={styles.navToday}
+              onClick={() => {
+                const { year, month } = calendarMonthInZone(new Date())
+                setCursor({ year, month })
+              }}
+            >
+              Este mes
+            </button>
+            <button
+              type="button"
+              className={styles.navButton}
+              onClick={() => setCursor((current) => shiftMonth(current.year, current.month, 1))}
+              aria-label="Mes siguiente"
+            >
+              <IconChevronRight size={18} />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -89,12 +110,20 @@ export function MonthView() {
       {error ? <ErrorState error={error} /> : null}
 
       <div className={styles.calendar}>
-        <div className={styles.weekdays} aria-hidden="true">
-          {DAY_NAMES.map((name) => (
+        <div
+          className={`${styles.weekdays} ${showWeekend ? styles.withWeekend : ''}`}
+          aria-hidden="true"
+        >
+          {weekdayNames.map((name) => (
             <span key={name}>{name}</span>
           ))}
         </div>
-        <div className={styles.grid} role="group" aria-label={title}>
+        <div
+          id="month-grid"
+          className={`${styles.grid} ${showWeekend ? styles.withWeekend : ''}`}
+          role="group"
+          aria-label={title}
+        >
           {days.map((day) => {
             const dayTasks = byDay.get(day.key) ?? []
             const isToday = day.key === today

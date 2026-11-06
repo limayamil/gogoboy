@@ -42,6 +42,17 @@ function dateKeyAddDays(key: string, days: number): string {
   return toDateKey(addDays(fromDateKey(key), days))
 }
 
+/** Sábado o domingo. Mes los esconde igual que Semana, hasta que se pida el fin de semana. */
+export function isWeekendDay(dayKey: string): boolean {
+  const weekday = fromDateKey(dayKey).getDay()
+  return weekday === 0 || weekday === 6
+}
+
+/** La grilla de lunes a viernes. El fin de semana sigue en el mes, solo no se dibuja. */
+export function withoutWeekend(days: readonly CalendarCell[]): CalendarCell[] {
+  return days.filter((day) => !isWeekendDay(day.key))
+}
+
 /** Grilla de lunes a domingo. Completa las semanas con días de los meses vecinos. */
 export function monthGrid(year: number, month: number): CalendarCell[] {
   const monthKey = `${year}-${String(month).padStart(2, '0')}`
